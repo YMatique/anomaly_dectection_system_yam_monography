@@ -1,15 +1,15 @@
 flowchart TD
-    subgraph "1. COLETA DE DADOS"
+    subgraph "1 - COLETA DE DADOS"
         A[📹 Vídeos de Treino<br/>Comportamento Normal]
     end
     
-    subgraph "2. PREPARAÇÃO"
+    subgraph "2 - PREPARAÇÃO"
         A --> B[Extração de Frames<br/>OpenCV]
         B --> C[🔄 Optical Flow<br/>Farnebäck Algorithm]
         C --> D[Sequências Temporais<br/>Janelas de 10 frames]
     end
     
-    subgraph "3. TREINAMENTO"
+    subgraph "3 - TREINAMENTO"
         D --> E[🧠 CAE Training<br/>Autoencoder]
         E --> F[🔄 ConvLSTM Training<br/>Temporal Analysis]
     end
