@@ -1,0 +1,30 @@
+flowchart TD
+    subgraph "1. COLETA DE DADOS"
+        A[📹 Vídeos de Treino<br/>Comportamento Normal]
+    end
+    
+    subgraph "2. PREPARAÇÃO"
+        A --> B[Extração de Frames<br/>OpenCV]
+        B --> C[🔄 Optical Flow<br/>Farnebäck Algorithm]
+        C --> D[Sequências Temporais<br/>Janelas de 10 frames]
+    end
+    
+    subgraph "3. TREINAMENTO"
+        D --> E[🧠 CAE Training<br/>Autoencoder]
+        E --> F[🔄 ConvLSTM Training<br/>Temporal Analysis]
+    end
+    
+    subgraph "PARÂMETROS"
+        G[📊 Configurações<br/>Epochs: 30<br/>Learning Rate: 0.001<br/>Sequence Length: 10<br/>Batch Size: 4]
+    end
+    
+    G -.-> E
+    G -.-> F
+    
+    F --> H[✅ Modelos Treinados<br/>Prontos para Detecção]
+    
+    style A fill:#e8f5e8
+    style C fill:#fff3e0
+    style E fill:#f3e5f5
+    style F fill:#e1f5fe
+    style H fill:#ffebee

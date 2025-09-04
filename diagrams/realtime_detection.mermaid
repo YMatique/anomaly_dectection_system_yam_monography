@@ -1,0 +1,31 @@
+flowchart TD
+    A[📹 Entrada de Vídeo] --> B[Captura Frame]
+    B --> C[Pré-processamento<br/>64x64 pixels]
+    C --> D[🔄 Optical Flow<br/>Frame atual vs anterior]
+    
+    D --> E[Buffer Sequencial<br/>Últimos 10 frames]
+    E --> F[🧠 CAE Model<br/>Reconstrução Features]
+    F --> G[🔄 ConvLSTM Model<br/>Análise Temporal]
+    
+    G --> H[Cálculo de Score<br/>MSE Reconstruction]
+    H --> I{Score > Threshold?}
+    
+    I -->|Sim| J[🚨 ANOMALIA DETECTADA]
+    I -->|Não| K[✅ Comportamento Normal]
+    
+    J --> L[📸 Captura Screenshot]
+    J --> M[💾 Salva no Banco]
+    J --> N[📧 Envia Alerta]
+    
+    K --> O[Próximo Frame]
+    L --> O
+    M --> O
+    N --> O
+    
+    O --> B
+    
+    style A fill:#e8f5e8
+    style J fill:#ffebee
+    style K fill:#e8f5e8
+    style F fill:#f3e5f5
+    style G fill:#e1f5fe

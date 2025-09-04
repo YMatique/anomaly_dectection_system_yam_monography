@@ -1,0 +1,39 @@
+graph LR
+    subgraph "ATORES"
+        U1[👤 Proprietário<br/>Residência]
+        U2[🤖 Sistema<br/>Automático]
+    end
+    
+    subgraph "CASOS DE USO"
+        UC1[Monitorar Propriedade]
+        UC2[Detectar Anomalias]
+        UC3[Visualizar Dashboard]
+        UC4[Consultar Histórico]
+        UC5[Configurar Sistema]
+        UC6[Registrar Eventos]
+        UC7[Enviar Alertas]
+        UC8[Capturar Screenshots]
+    end
+    
+    %% Relacionamentos Proprietário
+    U1 --> UC3
+    U1 --> UC4
+    U1 --> UC5
+    
+    %% Relacionamentos Sistema
+    U2 --> UC1
+    U2 --> UC2
+    U2 --> UC6
+    U2 --> UC7
+    U2 --> UC8
+    
+    %% Dependências
+    UC1 --> UC2
+    UC2 --> UC6
+    UC2 --> UC7
+    UC2 --> UC8
+    UC6 --> UC3
+    
+    style U1 fill:#e8f5e8
+    style U2 fill:#e1f5fe
+    style UC2 fill:#ffebee

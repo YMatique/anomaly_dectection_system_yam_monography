@@ -1,0 +1,38 @@
+graph TB
+    subgraph "CAMADA DE ENTRADA"
+        A[📹 Câmeras IP/USB]
+        B[📁 Arquivos de Vídeo]
+    end
+    
+    subgraph "CAMADA DE PROCESSAMENTO"
+        C[🔄 Extração Optical Flow]
+        D[🧠 Modelos Treinados<br/>CAE + ConvLSTM]
+        E[⚡ Engine de Detecção]
+    end
+    
+    subgraph "CAMADA DE DADOS"
+        F[(SQLite Database)]
+        G[📸 Screenshots]
+    end
+    
+    subgraph "CAMADA DE INTERFACE"
+        H[🌐 Dashboard Web<br/>Flask + HTML]
+        I[📊 Relatórios]
+        J[⚠️ Sistema de Alertas]
+    end
+    
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    E --> G
+    E --> J
+    F --> H
+    G --> H
+    H --> I
+    
+    style A fill:#e8f5e8
+    style D fill:#f3e5f5
+    style E fill:#ffebee
+    style H fill:#e1f5fe
