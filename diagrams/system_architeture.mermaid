@@ -1,38 +1,49 @@
 graph TB
-    subgraph "CAMADA DE ENTRADA"
-        A[📹 Câmeras IP/USB]
-        B[📁 Arquivos de Vídeo]
+    subgraph "ENTRADA"
+        A[📹 Fonte de Vídeo<br/>Câmera/Arquivo]
     end
     
-    subgraph "CAMADA DE PROCESSAMENTO"
-        C[🔄 Extração Optical Flow]
-        D[🧠 Modelos Treinados<br/>CAE + ConvLSTM]
-        E[⚡ Engine de Detecção]
+    subgraph "PROCESSAMENTO CORE"
+        B[Frame Extraction<br/>64x64 resize]
+        C[🔄 Optical Flow<br/>Farneback Dense]
+        D[Buffer Temporal<br/>Sequências de 10 frames]
+        
+        subgraph "MODELOS PARALELOS"
+            E[🧠 CAE Model<br/>Análise Espacial]
+            F[🔄 ConvLSTM Model<br/>Análise Temporal]
+        end
+        
+        G[Fusão de Scores<br/>CAE + ConvLSTM]
     end
     
-    subgraph "CAMADA DE DADOS"
-        F[(SQLite Database)]
-        G[📸 Screenshots]
+    subgraph "DECISÃO E AÇÃO"
+        H{Score > Threshold?}
+        I[🚨 ANOMALIA]
+        J[✅ NORMAL]
     end
     
-    subgraph "CAMADA DE INTERFACE"
-        H[🌐 Dashboard Web<br/>Flask + HTML]
-        I[📊 Relatórios]
-        J[⚠️ Sistema de Alertas]
+    subgraph "PERSISTÊNCIA"
+        K[(SQLite DB)]
+        L[📸 Screenshots]
+        M[🌐 Dashboard Web]
     end
     
-    A --> C
+    A --> B
     B --> C
     C --> D
     D --> E
-    E --> F
+    D --> F
     E --> G
-    E --> J
-    F --> H
+    F --> G
     G --> H
-    H --> I
+    H -->|Sim| I
+    H -->|Não| J
+    I --> K
+    I --> L
+    K --> M
+    L --> M
     
-    style A fill:#e8f5e8
-    style D fill:#f3e5f5
-    style E fill:#ffebee
-    style H fill:#e1f5fe
+    style E fill:#f3e5f5
+    style F fill:#e1f5fe
+    style I fill:#ffebee
+    style G fill:#fff3e0
