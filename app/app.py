@@ -75,7 +75,7 @@ with app.app_context():
 @app.route('/')
 def dashboard():
     """Serve a página principal do dashboard expandido."""
-    return render_template('enhanced_dashboard.html')
+    return render_template('dashboard.html')
 
 @app.route('/api/anomalies', methods=['GET'])
 @app.route('/api/anomalies', methods=['GET'])
