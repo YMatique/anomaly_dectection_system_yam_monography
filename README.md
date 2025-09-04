@@ -12,3 +12,5 @@ E ao gerar dados de teste também certificar que esteja rodando com o caminho ce
 ## open cv: pip install opencv-python numpy  
 ## tensorflow: pip install tensorflow  (Enable long paths in Windows 10, version 1607, and later: open powershell as admin: New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force)
 ## mathplot: pip install matplotlib
+## Flask: pip install Flask 
+## Flask Cors: pip install flask_cors
