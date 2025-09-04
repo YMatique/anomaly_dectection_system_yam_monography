@@ -14,3 +14,12 @@ E ao gerar dados de teste também certificar que esteja rodando com o caminho ce
 ## mathplot: pip install matplotlib
 ## Flask: pip install Flask 
 ## Flask Cors: pip install flask_cors
+
+
+
+
+# PARA USAR
+## abra primeiro o app/app.py: cd app/app.py
+## depois abra outro terminal e rode o arquivo anomaly_detection.py <caminho-do-video.extensao>
+
+## depois podes testar a api: http://127.0.0.1:5000
