@@ -157,7 +157,7 @@ def main():
     cae_input_shape = (IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
     cae_model = build_cae_model(cae_input_shape)
     cae_callbacks = [EarlyStopping(monitor='loss', patience=5),
-                     ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'cae_model_best.keras'),
+                     ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'cae_model_best_.keras'),
                                      save_best_only=True)]
     
     cae_history = cae_model.fit(cae_train_data, cae_train_data,
@@ -177,7 +177,7 @@ def main():
     convlstm_input_shape = (SEQUENCE_LENGTH - 1, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
     convlstm_model = build_convlstm_model(convlstm_input_shape)
     convlstm_callbacks = [EarlyStopping(monitor='loss', patience=5),
-                          ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'convlstm_model_best.keras'),
+                          ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'convlstm_model_best_.keras'),
                                           save_best_only=True)]
     
     convlstm_history = convlstm_model.fit(convlstm_train_data, convlstm_target_data,
