@@ -1,0 +1,59 @@
+%% Diagrama 2: Casos de Uso do Sistema
+graph LR
+    subgraph "ATORES"
+        U1[👤 Proprietário Residência]
+        U2[👤 Administrador Sistema]
+        U3[👤 Agente Segurança]
+        U4[🤖 Sistema Automático]
+    end
+    
+    subgraph "CASOS DE USO PRINCIPAIS"
+        UC1[Monitorar Propriedade]
+        UC2[Detectar Anomalias]
+        UC3[Registrar Eventos]
+        UC4[Enviar Alertas]
+        UC5[Consultar Histórico]
+        UC6[Configurar Sistema]
+        UC7[Treinar Modelo]
+        UC8[Avaliar Desempenho]
+    end
+    
+    subgraph "CASOS DE USO SECUNDÁRIOS"
+        UC9[Gerenciar Usuários]
+        UC10[Backup Dados]
+        UC11[Manutenção Sistema]
+        UC12[Gerar Relatórios]
+    end
+    
+    %% Relacionamentos Proprietário
+    U1 --> UC1
+    U1 --> UC5
+    U1 --> UC6
+    U1 --> UC12
+    
+    %% Relacionamentos Administrador
+    U2 --> UC6
+    U2 --> UC7
+    U2 --> UC8
+    U2 --> UC9
+    U2 --> UC10
+    U2 --> UC11
+    
+    %% Relacionamentos Agente Segurança
+    U3 --> UC5
+    U3 --> UC12
+    
+    %% Relacionamentos Sistema Automático
+    U4 --> UC1
+    U4 --> UC2
+    U4 --> UC3
+    U4 --> UC4
+    
+    %% Extensões e Inclusões
+    UC2 -.-> UC3
+    UC2 -.-> UC4
+    UC1 --> UC2
+    UC7 --> UC8
+    
+    style U1 fill:#e8f5e8
+    style U2 fill:#fce4ec

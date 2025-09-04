@@ -1,0 +1,29 @@
+flowchart TD
+    A[📹 Fonte Vídeo] --> B[Frame Extraction]
+    B --> C[Buffer 10 Frames]
+    C --> D[Normalização]
+    D --> E[🧠 CAE Encoder]
+    E --> F[Features Latentes]
+    F --> G[🔄 ConvLSTM]
+    G --> H[Score Anomalia]
+    H --> I{Score > Threshold?}
+    
+    I -->|Sim| J[🚨 ANOMALIA]
+    I -->|Não| K[✅ NORMAL]
+    
+    J --> L[💾 Salvar BD]
+    J --> M[📸 Screenshot]
+    J --> N[📧 Email]
+    
+    K --> O[Continue]
+    O --> C
+    
+    L --> P[🌐 Dashboard]
+    M --> P
+    N --> Q[📱 Notificação]
+    
+    style A fill:#e8f5e8
+    style J fill:#ffebee
+    style K fill:#e8f5e8
+    style E fill:#f3e5f5
+    style G fill:#e1f5fe

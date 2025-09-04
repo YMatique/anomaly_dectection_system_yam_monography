@@ -1,0 +1,51 @@
+%% Diagrama 3: Pipeline de Treinamento
+flowchart TD
+    subgraph "FASE 1: COLETA DE DADOS"
+        A[📹 Vídeos Normais<br/>Comportamento Regular] --> B[Extração de Frames<br/>30 FPS → 5 FPS]
+        B --> C[Pré-processamento<br/>Resize, Normalização]
+    end
+    
+    subgraph "FASE 2: EXTRAÇÃO DE FEATURES"
+        C --> D[🔄 Optical Flow<br/>Lucas-Kanade/Farneback]
+        D --> E[Mapas de Movimento<br/>Magnitude + Direção]
+        E --> F[Sequências Temporais<br/>Janelas de N frames]
+    end
+    
+    subgraph "FASE 3: TREINAMENTO CAE"
+        F --> G[🧠 Convolutional<br/>Autoencoder]
+        G --> H[Encoder<br/>Extração Features]
+        H --> I[Bottleneck<br/>Representação Compacta]
+        I --> J[Decoder<br/>Reconstrução]
+        J --> K[Loss MSE<br/>Original vs Reconstruído]
+    end
+    
+    subgraph "FASE 4: TREINAMENTO ConvLSTM"
+        K --> L{CAE Convergiu?}
+        L -->|Não| G
+        L -->|Sim| M[Features do Encoder<br/>Fixar Pesos CAE]
+        M --> N[🔄 ConvLSTM<br/>Análise Temporal]
+        N --> O[Hidden States<br/>Memória Sequencial]
+        O --> P[Predição Próximo Frame<br/>Features Espaciais]
+        P --> Q[Loss Predição<br/>Erro Temporal]
+    end
+    
+    subgraph "FASE 5: VALIDAÇÃO"
+        Q --> R{ConvLSTM Convergiu?}
+        R -->|Não| N
+        R -->|Sim| S[Teste com Dados<br/>de Validação]
+        S --> T[Métricas Avaliação<br/>MSE, MAE, Threshold]
+        T --> U[Modelo Final<br/>Pronto para Deploy]
+    end
+    
+    subgraph "PARÂMETROS"
+        V[📊 Hiperparâmetros<br/>Learning Rate: 0.001<br/>Batch Size: 2<br/>Epochs: 30<br/>Sequence Length: 10]
+    end
+    
+    V -.-> G
+    V -.-> N
+    
+    style A fill:#e8f5e8
+    style D fill:#fff3e0
+    style G fill:#f3e5f5
+    style N fill:#e1f5fe
+    style U fill:#ffebee

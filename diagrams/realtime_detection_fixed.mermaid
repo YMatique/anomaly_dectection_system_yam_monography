@@ -1,0 +1,45 @@
+graph TD
+    subgraph "ENTRADA"
+        A[📹 Câmera/Vídeo] --> B[Captura Frame]
+        B --> C[Pré-processamento<br/>Resize + Normalização]
+    end
+    
+    subgraph "BUFFER"
+        C --> D[Buffer Sequencial<br/>Últimos 10 frames]
+        D --> E[Sequência Temporal<br/>Shape: 10 x 224 x 224]
+    end
+    
+    subgraph "MODELOS"
+        E --> F[🧠 CAE Encoder<br/>Extração Features]
+        F --> G[Features Compactas<br/>Representação Latente]
+        G --> H[🔄 ConvLSTM<br/>Análise Temporal]
+        H --> I[Score Anomalia<br/>Erro Reconstrução]
+    end
+    
+    subgraph "DECISÃO"
+        I --> J{Score > Threshold?}
+        J -->|Sim| K[⚠️ ANOMALIA]
+        J -->|Não| L[✅ NORMAL]
+    end
+    
+    subgraph "AÇÕES"
+        K --> M[📸 Screenshot]
+        K --> N[🎥 Gravação Vídeo]
+        K --> O[💾 Salvar BD]
+        K --> P{Email Ativo?}
+        P -->|Sim| Q[📧 Enviar Alerta]
+        P -->|Não| R[📋 Log Apenas]
+    end
+    
+    subgraph "LOOP"
+        L --> S[Próximo Frame]
+        Q --> S
+        R --> S
+        S --> B
+    end
+    
+    style A fill:#e8f5e8
+    style K fill:#ffebee
+    style L fill:#e8f5e8
+    style F fill:#f3e5f5
+    style H fill:#e1f5fe

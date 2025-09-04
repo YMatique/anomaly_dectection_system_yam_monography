@@ -1,0 +1,41 @@
+%% Diagrama 1: Arquitetura Geral do Sistema
+graph TB
+    subgraph "ENTRADA"
+        A[Câmeras de Vigilância] --> B[Captura de Vídeo]
+        B --> C[Pré-processamento]
+    end
+    
+    subgraph "PROCESSAMENTO"
+        C --> D[Extração Optical Flow]
+        D --> E[Modelo CAE Treinado]
+        E --> F[Modelo ConvLSTM]
+        F --> G[Cálculo Score Anomalia]
+    end
+    
+    subgraph "DECISÃO"
+        G --> H{Score > Threshold?}
+        H -->|Sim| I[Anomalia Detectada]
+        H -->|Não| J[Comportamento Normal]
+    end
+    
+    subgraph "AÇÕES"
+        I --> K[Registro em BD]
+        I --> L[Captura Screenshot]
+        I --> M[Gravação Vídeo]
+        I --> N{Configuração Email?}
+        N -->|Sim| O[Envio Email]
+        N -->|Não| P[Log Apenas]
+        J --> Q[Continuar Monitoramento]
+    end
+    
+    subgraph "INTERFACE"
+        K --> R[Dashboard Web]
+        R --> S[Consulta Histórico]
+        R --> T[Visualização Anomalias]
+        R --> U[Configurações Sistema]
+    end
+    
+    style A fill:#e1f5fe
+    style I fill:#ffebee
+    style E fill:#f3e5f5
+    style F fill:#f3e5f5
