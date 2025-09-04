@@ -1,31 +1,33 @@
 flowchart TD
-    A[📹 Entrada de Vídeo] --> B[Captura Frame]
-    B --> C[Pré-processamento<br/>64x64 pixels]
-    C --> D[🔄 Optical Flow<br/>Frame atual vs anterior]
+    A[📹 Frame Input] --> B[Resize 64x64]
+    B --> C[🔄 Optical Flow vs Frame Anterior]
     
-    D --> E[Buffer Sequencial<br/>Últimos 10 frames]
-    E --> F[🧠 CAE Model<br/>Reconstrução Features]
-    F --> G[🔄 ConvLSTM Model<br/>Análise Temporal]
+    C --> D[Frame Buffer - Mantém 10 flows]
     
-    G --> H[Cálculo de Score<br/>MSE Reconstruction]
-    H --> I{Score > Threshold?}
+    D --> E[Processamento Paralelo]
     
-    I -->|Sim| J[🚨 ANOMALIA DETECTADA]
-    I -->|Não| K[✅ Comportamento Normal]
+    subgraph E ["🔀 PROCESSAMENTO PARALELO"]
+        F[🧠 CAE - Frame Individual]
+        G[🔄 ConvLSTM - Sequência 9→1]
+    end
     
-    J --> L[📸 Captura Screenshot]
-    J --> M[💾 Salva no Banco]
-    J --> N[📧 Envia Alerta]
+    F --> H[CAE Score - MSE Reconstruction]
+    G --> I[ConvLSTM Score - Prediction Error]
     
-    K --> O[Próximo Frame]
-    L --> O
-    M --> O
+    H --> J[Fusão OR Logic - max score]
+    I --> J
+    
+    J --> K{Score > Threshold?}
+    
+    K -->|Sim| L[🚨 ANOMALIA]
+    K -->|Não| M[✅ NORMAL]
+    
+    L --> N[📸 Screenshot + 💾 DB]
+    M --> O[Continue Loop]
     N --> O
+    O --> A
     
-    O --> B
-    
-    style A fill:#e8f5e8
-    style J fill:#ffebee
-    style K fill:#e8f5e8
     style F fill:#f3e5f5
     style G fill:#e1f5fe
+    style L fill:#ffebee
+    style J fill:#fff3e0
