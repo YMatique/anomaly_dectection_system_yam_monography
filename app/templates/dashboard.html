@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Avançado de Anomalias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+        }
+
+        .bg-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card.high-risk {
+            border-left-color: #ef4444;
+        }
+
+        .stat-card.medium-risk {
+            border-left-color: #f59e0b;
+        }
+
+        .stat-card.low-risk {
+            border-left-color: #10b981;
+        }
+
+        .anomaly-card {
+            background-color: #374151;
+            border-left: 4px solid #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .anomaly-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .anomaly-card.medium-risk {
+            border-left-color: #f59e0b;
+        }
+
+        .anomaly-card.low-risk {
+            border-left-color: #10b981;
+        }
+
+        .screenshot-thumb {
+            width: 120px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .screenshot-thumb:hover {
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            position: relative;
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            background-color: #1e293b;
+            border-radius: 12px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .filter-chip {
+            background-color: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .filter-chip.active {
+            background-color: #1d4ed8;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4">
+    <!-- Toast para notificações -->
+    <div id="toast" class="toast">
+        <span id="toast-message">Mensagem</span>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-card rounded-xl p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Sistema de Vigilância Inteligente</h1>
+                <p class="text-gray-400 mt-1">Monitorização em tempo real com IA</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="system-status" class="flex items-center">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-green-400 font-medium">Sistema Online</span>
+                </div>
+                <button id="refresh-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    🔄 Atualizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="stat-card bg-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Anomalias 24h</p>
+                    <p id="stat-total" class="text-3xl font-bold text-white">0</p>
+                </div>
+                <div class="text-blue-500 text-2xl">📊</div>
+            </div>
+        </div>
+
+        <div class="stat-card high-risk bg-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Alto Risco</p>
+                    <p id="stat-high" class="text-3xl font-bold text-red-400">0</p>
+                </div>
+                <div class="text-red-500 text-2xl">🚨</div>
+            </div>
+        </div>
+
+        <div class="stat-card medium-risk bg-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Médio Risco</p>
+                    <p id="stat-medium" class="text-3xl font-bold text-orange-400">0</p>
+                </div>
+                <div class="text-orange-500 text-2xl">⚠️</div>
+            </div>
+        </div>
+
+        <div class="stat-card low-risk bg-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Baixo Risco</p>
+                    <p id="stat-low" class="text-3xl font-bold text-green-400">0</p>
+                </div>
+                <div class="text-green-500 text-2xl">✅</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-card p-6 rounded-xl">
+            <h3 class="text-xl font-semibold text-white mb-4">Anomalias por Hora (24h)</h3>
+            <canvas id="hourlyChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="bg-card p-6 rounded-xl">
+            <h3 class="text-xl font-semibold text-white mb-4">Distribuição por Tipo</h3>
+            <canvas id="typeChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-card p-4 rounded-xl mb-6">
+        <h3 class="text-lg font-semibold text-white mb-3">Filtros</h3>
+        <div class="flex flex-wrap gap-3">
+            <span class="filter-chip active" data-filter="all">Todas</span>
+            <span class="filter-chip" data-filter="HIGH">Alto Risco</span>
+            <span class="filter-chip" data-filter="MEDIUM">Médio Risco</span>
+            <span class="filter-chip" data-filter="LOW">Baixo Risco</span>
+            <span class="filter-chip" data-filter="INTRUSAO">Intrusão</span>
+            <span class="filter-chip" data-filter="MOVIMENTO_SUSPEITO">Movimento</span>
+        </div>
+    </div>
+
+    <!-- Feed de Anomalias -->
+    <div class="bg-card p-6 rounded-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-white">Feed de Anomalias Recentes</h2>
+            <div class="text-sm text-gray-400">
+                <span id="total-count">Carregando...</span>
+            </div>
+        </div>
+
+        <div id="anomaly-list" class="space-y-4">
+            <!-- Anomalias serão inseridas aqui dinamicamente -->
+            <div id="loading-message" class="text-center text-gray-400 py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                Carregando anomalias...
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        <div id="pagination" class="flex justify-center mt-6 space-x-2" style="display: none;">
+            <button id="prev-btn"
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50">Anterior</button>
+            <span id="page-info" class="px-4 py-2 text-gray-400"></span>
+            <button id="next-btn"
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50">Próximo</button>
+        </div>
+    </div>
+
+    <!-- Modal para Screenshot -->
+    <div id="screenshot-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 class="text-xl font-bold text-white mb-4" id="modal-title">Detalhes da Anomalia</h3>
+            <div id="modal-body">
+                <img id="modal-image" src="" alt="Screenshot" class="w-full max-h-96 object-contain rounded-lg mb-4">
+                <div id="modal-details" class="text-gray-300">
+                    <!-- Detalhes serão inseridos aqui -->
+                </div>
+            </div>
+            <div class="mt-6 flex space-x-4">
+                <button id="mark-false-positive" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                    Marcar como Falso Positivo
+                </button>
+                <button id="add-note-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    Adicionar Nota
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        const API_BASE = '/api';
+
+        // Estado da aplicação
+        let currentPage = 1;
+        let currentFilter = 'all';
+        let totalPages = 1;
+        let currentAnomalyId = null;
+
+        // Elementos do DOM
+        const anomalyList = document.getElementById('anomaly-list');
+        const loadingMessage = document.getElementById('loading-message');
+        const modal = document.getElementById('screenshot-modal');
+        const toast = document.getElementById('toast');
+
+        // Charts
+        let hourlyChart, typeChart;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function () {
+            loadStats();
+            loadAnomalies();
+            setupEventListeners();
+            setupCharts();
+
+            // Auto-refresh a cada 30 segundos
+            setInterval(() => {
+                loadStats();
+                loadAnomalies();
+            }, 30000);
+        });
+
+        function setupEventListeners() {
+            // Botão de refresh
+            document.getElementById('refresh-btn').addEventListener('click', () => {
+                loadStats();
+                loadAnomalies();
+            });
+
+            // Filtros
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', function () {
+                    document.querySelector('.filter-chip.active').classList.remove('active');
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    currentPage = 1;
+                    loadAnomalies();
+                });
+            });
+
+            // Modal
+            document.querySelector('.close').addEventListener('click', closeModal);
+            window.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Paginação
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadAnomalies();
+                }
+            });
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadAnomalies();
+                }
+            });
+
+            // Ações do modal
+            document.getElementById('mark-false-positive').addEventListener('click', markFalsePositive);
+            document.getElementById('add-note-btn').addEventListener('click', addNote);
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+
+                document.getElementById('stat-total').textContent = stats.total_24h;
+                document.getElementById('stat-high').textContent = stats.high_risk;
+                document.getElementById('stat-medium').textContent = stats.medium_risk;
+                document.getElementById('stat-low').textContent = stats.low_risk;
+
+                updateCharts(stats);
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+                showToast('Erro ao carregar estatísticas', 'error');
+            }
+        }
+
+        async function loadAnomalies() {
+            try {
+                loadingMessage.style.display = 'block';
+                anomalyList.innerHTML = '<div id="loading-message" class="text-center text-gray-400 py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>Carregando anomalias...</div>';
+
+                let url = `${API_BASE}/anomalies?page=${currentPage}&limit=20`;
+                if (currentFilter !== 'all') {
+                    if (['HIGH', 'MEDIUM', 'LOW'].includes(currentFilter)) {
+                        url += `&risk_level=${currentFilter}`;
+                    } else {
+                        url += `&type=${currentFilter}`;
+                    }
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                displayAnomalies(data.anomalies);
+                updatePagination(data.pagination);
+
+                document.getElementById('total-count').textContent =
+                    `${data.pagination.total} anomalias encontradas`;
+
+            } catch (error) {
+                console.error('Erro ao carregar anomalias:', error);
+                anomalyList.innerHTML = '<p class="text-center text-red-400">Erro ao carregar anomalias</p>';
+                showToast('Erro ao carregar anomalias', 'error');
+            }
+        }
+
+        function displayAnomalies(anomalies) {
+            if (anomalies.length === 0) {
+                anomalyList.innerHTML = '<p class="text-center text-gray-400 py-8">Nenhuma anomalia encontrada</p>';
+                return;
+            }
+
+            anomalyList.innerHTML = anomalies.map(anomaly => `
+                <div class="anomaly-card ${anomaly.risk_level.toLowerCase()}-risk p-6 rounded-xl" data-id="${anomaly.id}">
+                    <div class="flex items-start space-x-4">
+                        <!-- Screenshot Thumbnail -->
+                        <div class="flex-shrink-0">
+                            ${anomaly.screenshot_filename ?
+                    `<img src="${API_BASE}/screenshot/${anomaly.screenshot_path.replace('../screenshots/', '')}/${anomaly.screenshot_filename}" 
+                                     alt="Screenshot" class="screenshot-thumb" onclick="openModal(${anomaly.id})">` :
+                    `<div class="w-30 h-20 bg-gray-600 rounded flex items-center justify-center text-gray-400">
+                                    <span>📷</span>
+                                 </div>`
+                }
+                        </div>
+                        
+                        <!-- Conteúdo Principal -->
+                        <div class="flex-grow">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <span class="font-bold text-lg ${getRiskColor(anomaly.risk_level)}">${anomaly.type}</span>
+                                    <span class="filter-chip text-xs ${getRiskBadge(anomaly.risk_level)}">${anomaly.risk_level}</span>
+                                    ${anomaly.is_false_positive ? '<span class="bg-gray-500 text-white text-xs px-2 py-1 rounded">FALSO POSITIVO</span>' : ''}
+                                </div>
+                                <span class="text-sm text-gray-400">${formatDate(anomaly.timestamp)}</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <p class="text-gray-400">Localização:</p>
+                                    <p class="text-white font-medium">${anomaly.location}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400">Câmara:</p>
+                                    <p class="text-white font-medium">${anomaly.camera_id}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400">Score:</p>
+                                    <p class="text-white font-medium">${anomaly.combined_score.toFixed(4)}</p>
+                                </div>
+                            </div>
+                            
+                            ${anomaly.notes ? `
+                                <div class="mt-3 p-3 bg-gray-700 rounded-lg">
+                                    <p class="text-sm text-gray-300"><strong>Nota:</strong> ${anomaly.notes}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Ações -->
+                        <div class="flex-shrink-0 space-y-2">
+                            <button onclick="openModal(${anomaly.id})" class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded-lg transition-colors">
+                                Ver Detalhes
+                            </button>
+                            ${!anomaly.is_false_positive ? `
+                                <button onclick="quickMarkFalsePositive(${anomaly.id})" class="block w-full bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-lg transition-colors">
+                                    Falso Positivo
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePagination(pagination) {
+            totalPages = pagination.pages;
+
+            document.getElementById('page-info').textContent =
+                `Página ${pagination.page} de ${pagination.pages}`;
+
+            document.getElementById('prev-btn').disabled = !pagination.has_prev;
+            document.getElementById('next-btn').disabled = !pagination.has_next;
+
+            document.getElementById('pagination').style.display =
+                pagination.pages > 1 ? 'flex' : 'none';
+        }
+
+        async function openModal(anomalyId) {
+            try {
+                const response = await fetch(`${API_BASE}/anomalies?limit=1`);
+                const data = await response.json();
+                const anomaly = data.anomalies.find(a => a.id === anomalyId);
+
+                if (!anomaly) return;
+
+                currentAnomalyId = anomalyId;
+
+                document.getElementById('modal-title').textContent =
+                    `${anomaly.type} - ${anomaly.risk_level}`;
+
+                if (anomaly.screenshot_filename) {
+                    const imageUrl = `${API_BASE}/screenshot/${anomaly.screenshot_path}/${anomaly.screenshot_filename}`;
+                    document.getElementById('modal-image').src = imageUrl;
+                    document.getElementById('modal-image').style.display = 'block';
+
+                    // Debug da imagem
+                    console.log('🖼️ Carregando imagem:', imageUrl);
+                } else {
+                    document.getElementById('modal-image').style.display = 'none';
+                }
+
+                document.getElementById('modal-details').innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-white mb-2">Informações Básicas</h4>
+                            <p><strong>Timestamp:</strong> ${formatDate(anomaly.timestamp)}</p>
+                            <p><strong>Tipo:</strong> ${anomaly.type}</p>
+                            <p><strong>Localização:</strong> ${anomaly.location}</p>
+                            <p><strong>Câmara:</strong> ${anomaly.camera_id}</p>
+                            <p><strong>Nível de Risco:</strong> ${anomaly.risk_level}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-white mb-2">Scores de Detecção</h4>
+                            <p><strong>Score CAE:</strong> ${anomaly.cae_score ? anomaly.cae_score.toFixed(4) : 'N/A'}</p>
+                            <p><strong>Score ConvLSTM:</strong> ${anomaly.convlstm_score ? anomaly.convlstm_score.toFixed(4) : 'N/A'}</p>
+                            <p><strong>Score Combinado:</strong> ${anomaly.combined_score.toFixed(4)}</p>
+                            <p><strong>Duração Detecção:</strong> ${anomaly.detection_duration ? (anomaly.detection_duration * 1000).toFixed(2) + 'ms' : 'N/A'}</p>
+                            <p><strong>Frame:</strong> #${anomaly.frame_number || 'N/A'}</p>
+                            <p><strong>Resolução:</strong> ${anomaly.frame_resolution || 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    ${anomaly.notes ? `
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-white mb-2">Notas</h4>
+                            <p class="bg-gray-700 p-3 rounded-lg">${anomaly.notes}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${anomaly.additional_data && Object.keys(anomaly.additional_data).length > 0 ? `
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-white mb-2">Dados Adicionais</h4>
+                            <pre class="bg-gray-800 p-3 rounded-lg text-sm overflow-auto">${JSON.stringify(anomaly.additional_data, null, 2)}</pre>
+                        </div>
+                    ` : ''}
+                `;
+
+                modal.style.display = 'block';
+
+            } catch (error) {
+                console.error('Erro ao carregar detalhes:', error);
+                showToast('Erro ao carregar detalhes', 'error');
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            currentAnomalyId = null;
+        }
+
+        async function markFalsePositive() {
+            if (!currentAnomalyId) return;
+
+            const notes = prompt('Motivo para marcar como falso positivo (opcional):');
+            if (notes === null) return; // Cancelado
+
+            try {
+                const response = await fetch(`${API_BASE}/anomalies/${currentAnomalyId}/mark_false_positive`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: notes || '' })
+                });
+
+                if (response.ok) {
+                    showToast('Marcado como falso positivo', 'success');
+                    closeModal();
+                    loadAnomalies();
+                    loadStats();
+                } else {
+                    showToast('Erro ao marcar como falso positivo', 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro ao marcar como falso positivo', 'error');
+            }
+        }
+
+        async function quickMarkFalsePositive(anomalyId) {
+            if (!confirm('Marcar esta anomalia como falso positivo?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/anomalies/${anomalyId}/mark_false_positive`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'Marcado rapidamente' })
+                });
+
+                if (response.ok) {
+                    showToast('Marcado como falso positivo', 'success');
+                    loadAnomalies();
+                    loadStats();
+                } else {
+                    showToast('Erro ao marcar como falso positivo', 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro ao marcar como falso positivo', 'error');
+            }
+        }
+
+        async function addNote() {
+            if (!currentAnomalyId) return;
+
+            const notes = prompt('Adicionar nota:');
+            if (!notes) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/anomalies/${currentAnomalyId}/add_note`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes })
+                });
+
+                if (response.ok) {
+                    showToast('Nota adicionada', 'success');
+                    openModal(currentAnomalyId); // Recarregar modal
+                    loadAnomalies();
+                } else {
+                    showToast('Erro ao adicionar nota', 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro ao adicionar nota', 'error');
+            }
+        }
+
+        function setupCharts() {
+            // Gráfico de barras por hora
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            hourlyChart = new Chart(hourlyCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Anomalias',
+                        data: new Array(24).fill(0),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(156, 163, 175, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(156, 163, 175, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de pizza por tipo
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            typeChart = new Chart(typeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#ef4444',
+                            '#f59e0b',
+                            '#10b981',
+                            '#3b82f6',
+                            '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(stats) {
+            // Atualizar gráfico por hora
+            const hourlyData = new Array(24).fill(0);
+            Object.entries(stats.hourly_data || {}).forEach(([hour, count]) => {
+                hourlyData[parseInt(hour)] = count;
+            });
+            hourlyChart.data.datasets[0].data = hourlyData;
+            hourlyChart.update();
+
+            // Atualizar gráfico por tipo
+            const typeLabels = Object.keys(stats.by_type || {});
+            const typeData = Object.values(stats.by_type || {});
+            typeChart.data.labels = typeLabels;
+            typeChart.data.datasets[0].data = typeData;
+            typeChart.update();
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('pt-BR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getRiskColor(risk) {
+            switch (risk) {
+                case 'HIGH': return 'text-red-400';
+                case 'MEDIUM': return 'text-orange-400';
+                case 'LOW': return 'text-green-400';
+                default: return 'text-gray-400';
+            }
+        }
+
+        function getRiskBadge(risk) {
+            switch (risk) {
+                case 'HIGH': return 'bg-red-600';
+                case 'MEDIUM': return 'bg-orange-600';
+                case 'LOW': return 'bg-green-600';
+                default: return 'bg-gray-600';
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `toast show ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Teclas de atalho
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+            if (event.key === 'F5' || (event.ctrlKey && event.key === 'r')) {
+                event.preventDefault();
+                loadStats();
+                loadAnomalies();
+            }
+        });
+    </script>
+</body>
+
+</html>
