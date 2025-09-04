@@ -20,7 +20,7 @@ SCREENSHOTS_DIR = '../screenshots'
 THRESHOLDS_FILE = os.path.join(MODELS_DIR, 'anomaly_thresholds.txt')
 
 # Nova base de dados expandida
-DB_NAME = '../anomalies_enhanced.db'
+DB_NAME = 'anomalies_enhanced.db'
 
 # Dimensões dos frames de Fluxo Óptico
 IMG_HEIGHT, IMG_WIDTH = 64, 64
@@ -164,39 +164,6 @@ class EnhancedAnomalyDetector:
         timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]  # milissegundos
         return f"{timestamp_str}_{anomaly_type}_{CAMERA_ID}_{risk_level}.jpg"
 
-    # def save_screenshot(self, frame, anomaly_type, combined_score, timestamp):
-    #     """Salva screenshot com organização por data"""
-    #     # Determinar nível de risco
-    #     risk_level = self.determine_risk_level(combined_score)
-        
-    #     # Gerar nome do arquivo
-    #     filename = self.generate_screenshot_filename(anomaly_type, risk_level, timestamp)
-        
-    #     # Caminho organizado por data
-    #     date_path = os.path.join(SCREENSHOTS_DIR, 
-    #                             str(timestamp.year), 
-    #                             f"{timestamp.month:02d}", 
-    #                             f"{timestamp.day:02d}")
-    #     os.makedirs(date_path, exist_ok=True)
-        
-    #     # Caminho completo
-    #     full_path = os.path.join(date_path, filename)
-        
-    #     # Capturar com overlay
-    #     timestamp_str = timestamp.strftime("%d/%m %H:%M:%S")
-    #     screenshot_frame = self.capture_screenshot_with_overlay(
-    #         frame, anomaly_type, combined_score, timestamp_str
-    #     )
-        
-    #     # Salvar
-    #     success = cv2.imwrite(full_path, screenshot_frame)
-        
-    #     if success:
-    #         print(f"📸 Screenshot salvo: {filename}")
-    #         return date_path, filename, risk_level
-    #     else:
-    #         print(f"❌ Erro ao salvar screenshot: {filename}")
-    #         return None, None, None
     def save_screenshot(self, frame, anomaly_type, combined_score, timestamp):
         """Salva screenshot com caminhos CORRETOS para a API"""
         # Determinar nível de risco
