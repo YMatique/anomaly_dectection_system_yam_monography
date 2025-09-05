@@ -11,7 +11,7 @@
   }
 }}%%
 
-graph LR
+graph TD
     A[📹 Fonte Vídeo] --> B[Frame Extraction<br/>64x64]
     B --> C[ Optical Flow]
     C --> D[Buffer 10 Frames]
@@ -27,7 +27,7 @@ graph LR
     H -->|Sim| I[ ANOMALIA]
     H -->|Não| J[ NORMAL]
     
-    I --> K[💾 Base Dados]
+    I --> K[(💾 Base Dados)]
     I --> L[📸 Screenshot]
     K --> M[🌐 Dashboard]
     L --> M
