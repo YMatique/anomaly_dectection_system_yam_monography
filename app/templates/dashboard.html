@@ -7,9 +7,32 @@
     <title>Dashboard Avançado de Anomalias</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zinc: {
+                            50: '#fafafa',
+                            100: '#f4f4f5',
+                            200: '#e4e4e7',
+                            300: '#d4d4d8',
+                            400: '#a1a1aa',
+                            500: '#71717a',
+                            600: '#52525b',
+                            700: '#3f3f46',
+                            800: '#27272a',
+                            900: '#18181b',
+                            950: '#09090b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -26,11 +49,12 @@
         .stat-card {
             background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
             border-left: 4px solid #3b82f6;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
         }
 
         .stat-card.high-risk {
@@ -68,13 +92,15 @@
             width: 120px;
             height: 80px;
             object-fit: cover;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
 
         .screenshot-thumb:hover {
             transform: scale(1.05);
+            border-color: #3b82f6;
         }
 
         .modal {
@@ -91,20 +117,44 @@
 
         .modal-content {
             position: relative;
-            margin: 5% auto;
-            padding: 20px;
-            width: 90%;
-            max-width: 800px;
+            margin: 2% auto;
+            padding: 0;
+            width: 95%;
+            max-width: 900px;
+            max-height: 90vh;
             background-color: #1e293b;
-            border-radius: 12px;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #334155;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .modal-body {
+            padding: 24px 32px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: calc(90vh - 200px);
+        }
+
+        .modal-footer {
+            padding: 20px 32px;
+            border-top: 1px solid #334155;
+            background-color: #27272a;
         }
 
         .close {
-            color: #aaa;
+            color: #a1a1aa;
             float: right;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+            transition: color 0.2s;
         }
 
         .close:hover {
@@ -114,15 +164,53 @@
         .filter-chip {
             background-color: #3b82f6;
             color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .filter-chip:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
         }
 
         .filter-chip.active {
             background-color: #1d4ed8;
+            border-color: #60a5fa;
+        }
+
+        .filter-sidebar {
+            width: 320px;
+            transition: transform 0.3s ease;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            border-right: 1px solid #475569;
+        }
+
+        .filter-sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+
+        .filter-toggle {
+            position: absolute;
+            right: -40px;
+            top: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-toggle:hover {
+            background-color: #2563eb;
         }
 
         .toast {
@@ -131,157 +219,393 @@
             right: 20px;
             background-color: #10b981;
             color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 16px 24px;
+            border-radius: 12px;
             z-index: 1001;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
         .toast.show {
             transform: translateX(0);
         }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+            margin-left: 320px;
+        }
+
+        .main-content.expanded {
+            margin-left: 40px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #27272a;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #52525b;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #71717a;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #52525b;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
     </style>
 </head>
 
-<body class="min-h-screen p-4">
+<body class="min-h-screen">
     <!-- Toast para notificações -->
     <div id="toast" class="toast">
         <span id="toast-message">Mensagem</span>
     </div>
 
-    <!-- Header -->
-    <div class="bg-card rounded-xl p-6 mb-6">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-white">Sistema de Vigilância Inteligente</h1>
-                <p class="text-gray-400 mt-1">Monitorização em tempo real com IA</p>
+    <!-- Sidebar de Filtros -->
+    <div id="filter-sidebar" class="filter-sidebar fixed h-full z-50">
+        <div class="filter-toggle" onclick="toggleSidebar()">
+            <svg id="toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" class="text-white">
+                <path d="M21 6H3M21 12H3M21 18H3" />
+            </svg>
+        </div>
+
+        <div class="p-6 h-full overflow-y-auto custom-scrollbar">
+            <div class="flex items-center gap-3 mb-8">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    class="text-blue-400">
+                    <path d="M22 3H2L10 12.46V19L14 21V12.46L22 3Z" />
+                </svg>
+                <h2 class="text-xl font-bold text-white">Filtros Avançados</h2>
             </div>
-            <div class="flex items-center space-x-4">
-                <div id="system-status" class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                    <span class="text-green-400 font-medium">Sistema Online</span>
+
+            <!-- Período -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">📅 Período</label>
+                <div class="space-y-2">
+                    <button
+                        class="period-btn w-full text-left px-3 py-2 rounded-lg text-sm bg-zinc-700 hover:bg-zinc-600 transition-colors"
+                        data-period="today">Hoje</button>
+                    <button
+                        class="period-btn w-full text-left px-3 py-2 rounded-lg text-sm bg-zinc-700 hover:bg-zinc-600 transition-colors"
+                        data-period="yesterday">Ontem</button>
+                    <button
+                        class="period-btn w-full text-left px-3 py-2 rounded-lg text-sm bg-zinc-700 hover:bg-zinc-600 transition-colors"
+                        data-period="week">Última Semana</button>
+                    <button
+                        class="period-btn w-full text-left px-3 py-2 rounded-lg text-sm bg-zinc-700 hover:bg-zinc-600 transition-colors"
+                        data-period="month">Último Mês</button>
                 </div>
-                <button id="refresh-btn"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    🔄 Atualizar
+                <div class="mt-3">
+                    <label class="block text-xs text-zinc-400 mb-1">Período Personalizado</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <input type="datetime-local" id="date-from"
+                            class="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-sm text-white">
+                        <input type="datetime-local" id="date-to"
+                            class="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-sm text-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nível de Risco -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">⚠️ Nível de Risco</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="risk-filter w-4 h-4 text-red-500 bg-zinc-700 border-zinc-600 rounded focus:ring-red-500"
+                            value="HIGH" checked>
+                        <span class="text-sm text-red-400 font-medium">Alto Risco</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="risk-filter w-4 h-4 text-orange-500 bg-zinc-700 border-zinc-600 rounded focus:ring-orange-500"
+                            value="MEDIUM" checked>
+                        <span class="text-sm text-orange-400 font-medium">Médio Risco</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="risk-filter w-4 h-4 text-green-500 bg-zinc-700 border-zinc-600 rounded focus:ring-green-500"
+                            value="LOW" checked>
+                        <span class="text-sm text-green-400 font-medium">Baixo Risco</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tipo de Anomalia -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">🎯 Tipo de Anomalia</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="type-filter w-4 h-4 text-blue-500 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                            value="INTRUSAO" checked>
+                        <span class="text-sm text-zinc-200">Intrusão</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="type-filter w-4 h-4 text-blue-500 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                            value="MOVIMENTO_SUSPEITO" checked>
+                        <span class="text-sm text-zinc-200">Movimento Suspeito</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Score Range -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">📊 Faixa de Score</label>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">Score Mínimo: <span
+                                id="min-score-value">0.0000</span></label>
+                        <input type="range" id="min-score" class="range-slider w-full" min="0" max="1" step="0.0001"
+                            value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">Score Máximo: <span
+                                id="max-score-value">1.0000</span></label>
+                        <input type="range" id="max-score" class="range-slider w-full" min="0" max="1" step="0.0001"
+                            value="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">🏷️ Status</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="status-filter w-4 h-4 text-blue-500 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                            value="reviewed" checked>
+                        <span class="text-sm text-zinc-200">Revisadas</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="status-filter w-4 h-4 text-blue-500 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                            value="unreviewed" checked>
+                        <span class="text-sm text-zinc-200">Não Revisadas</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox"
+                            class="status-filter w-4 h-4 text-blue-500 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                            value="false_positive">
+                        <span class="text-sm text-zinc-200">Falsos Positivos</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Pesquisa -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-zinc-300 mb-3">🔍 Pesquisa</label>
+                <input type="text" id="search-input" placeholder="Pesquisar em notas..."
+                    class="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+
+            <!-- Ações -->
+            <div class="space-y-3">
+                <button onclick="applyFilters()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    Aplicar Filtros
+                </button>
+                <button onclick="clearFilters()"
+                    class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    Limpar Filtros
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Cards de Estatísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="stat-card bg-card p-6 rounded-xl">
-            <div class="flex items-center justify-between">
+    <!-- Conteúdo Principal -->
+    <div id="main-content" class="main-content min-h-screen p-4">
+
+        <!-- Header -->
+        <div class="bg-card rounded-xl p-6 mb-6">
+            <div class="flex justify-between items-center">
                 <div>
-                    <p class="text-gray-400 text-sm font-medium">Anomalias 24h</p>
-                    <p id="stat-total" class="text-3xl font-bold text-white">0</p>
+                    <h1 class="text-3xl font-bold text-white">Sistema de Vigilância Inteligente</h1>
+                    <p class="text-zinc-400 mt-1">Monitorização em tempo real com IA</p>
                 </div>
-                <div class="text-blue-500 text-2xl">📊</div>
+                <div class="flex items-center space-x-4">
+                    <div id="system-status" class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span class="text-green-400 font-medium">Sistema Online</span>
+                    </div>
+                    <button id="refresh-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M23 4V10H17M1 20V14H7M20.49 9A9 9 0 0 0 5.64 5.64L1 10M4.51 15A9 9 0 0 0 18.36 18.36L23 14" />
+                        </svg>
+                        Atualizar
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="stat-card high-risk bg-card p-6 rounded-xl">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm font-medium">Alto Risco</p>
-                    <p id="stat-high" class="text-3xl font-bold text-red-400">0</p>
+        <!-- Cards de Estatísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="stat-card bg-card p-6 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-zinc-400 text-sm font-medium">Anomalias 24h</p>
+                        <p id="stat-total" class="text-3xl font-bold text-white">0</p>
+                    </div>
+                    <div class="text-blue-500 text-2xl">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 20V10M18 20V4M6 20V16" />
+                        </svg>
+                    </div>
                 </div>
-                <div class="text-red-500 text-2xl">🚨</div>
+            </div>
+
+            <div class="stat-card high-risk bg-card p-6 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-zinc-400 text-sm font-medium">Alto Risco</p>
+                        <p id="stat-high" class="text-3xl font-bold text-red-400">0</p>
+                    </div>
+                    <div class="text-red-500 text-2xl">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card medium-risk bg-card p-6 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-zinc-400 text-sm font-medium">Médio Risco</p>
+                        <p id="stat-medium" class="text-3xl font-bold text-orange-400">0</p>
+                    </div>
+                    <div class="text-orange-500 text-2xl">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M12 9v4M12 17h.01M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card low-risk bg-card p-6 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-zinc-400 text-sm font-medium">Baixo Risco</p>
+                        <p id="stat-low" class="text-3xl font-bold text-green-400">0</p>
+                    </div>
+                    <div class="text-green-500 text-2xl">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3" />
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="stat-card medium-risk bg-card p-6 rounded-xl">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm font-medium">Médio Risco</p>
-                    <p id="stat-medium" class="text-3xl font-bold text-orange-400">0</p>
-                </div>
-                <div class="text-orange-500 text-2xl">⚠️</div>
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold text-white mb-4">Anomalias por Hora (24h)</h3>
+                <canvas id="hourlyChart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="bg-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold text-white mb-4">Distribuição por Tipo</h3>
+                <canvas id="typeChart" width="400" height="200"></canvas>
             </div>
         </div>
 
-        <div class="stat-card low-risk bg-card p-6 rounded-xl">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm font-medium">Baixo Risco</p>
-                    <p id="stat-low" class="text-3xl font-bold text-green-400">0</p>
-                </div>
-                <div class="text-green-500 text-2xl">✅</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gráficos -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Feed de Anomalias -->
         <div class="bg-card p-6 rounded-xl">
-            <h3 class="text-xl font-semibold text-white mb-4">Anomalias por Hora (24h)</h3>
-            <canvas id="hourlyChart" width="400" height="200"></canvas>
-        </div>
-
-        <div class="bg-card p-6 rounded-xl">
-            <h3 class="text-xl font-semibold text-white mb-4">Distribuição por Tipo</h3>
-            <canvas id="typeChart" width="400" height="200"></canvas>
-        </div>
-    </div>
-
-    <!-- Filtros -->
-    <div class="bg-card p-4 rounded-xl mb-6">
-        <h3 class="text-lg font-semibold text-white mb-3">Filtros</h3>
-        <div class="flex flex-wrap gap-3">
-            <span class="filter-chip active" data-filter="all">Todas</span>
-            <span class="filter-chip" data-filter="HIGH">Alto Risco</span>
-            <span class="filter-chip" data-filter="MEDIUM">Médio Risco</span>
-            <span class="filter-chip" data-filter="LOW">Baixo Risco</span>
-            <span class="filter-chip" data-filter="INTRUSAO">Intrusão</span>
-            <span class="filter-chip" data-filter="MOVIMENTO_SUSPEITO">Movimento</span>
-        </div>
-    </div>
-
-    <!-- Feed de Anomalias -->
-    <div class="bg-card p-6 rounded-xl">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-white">Feed de Anomalias Recentes</h2>
-            <div class="text-sm text-gray-400">
-                <span id="total-count">Carregando...</span>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Feed de Anomalias</h2>
+                <div class="text-sm text-zinc-400">
+                    <span id="total-count">Carregando...</span>
+                </div>
             </div>
-        </div>
 
-        <div id="anomaly-list" class="space-y-4">
-            <!-- Anomalias serão inseridas aqui dinamicamente -->
-            <div id="loading-message" class="text-center text-gray-400 py-8">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                Carregando anomalias...
+            <div id="anomaly-list" class="space-y-4">
+                <!-- Anomalias serão inseridas aqui dinamicamente -->
+                <div id="loading-message" class="text-center text-zinc-400 py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    Carregando anomalias...
+                </div>
             </div>
-        </div>
 
-        <!-- Paginação -->
-        <div id="pagination" class="flex justify-center mt-6 space-x-2" style="display: none;">
-            <button id="prev-btn"
-                class="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50">Anterior</button>
-            <span id="page-info" class="px-4 py-2 text-gray-400"></span>
-            <button id="next-btn"
-                class="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50">Próximo</button>
+            <!-- Paginação -->
+            <div id="pagination" class="flex justify-center mt-6 space-x-2" style="display: none;">
+                <button id="prev-btn"
+                    class="px-4 py-2 bg-zinc-600 text-white rounded-lg disabled:opacity-50 hover:bg-zinc-500 transition-colors">Anterior</button>
+                <span id="page-info" class="px-4 py-2 text-zinc-400"></span>
+                <button id="next-btn"
+                    class="px-4 py-2 bg-zinc-600 text-white rounded-lg disabled:opacity-50 hover:bg-zinc-500 transition-colors">Próximo</button>
+            </div>
         </div>
     </div>
 
     <!-- Modal para Screenshot -->
     <div id="screenshot-modal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3 class="text-xl font-bold text-white mb-4" id="modal-title">Detalhes da Anomalia</h3>
-            <div id="modal-body">
-                <img id="modal-image" src="" alt="Screenshot" class="w-full max-h-96 object-contain rounded-lg mb-4">
-                <div id="modal-details" class="text-gray-300">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-white" id="modal-title">Detalhes da Anomalia</h3>
+                <span class="close">&times;</span>
+            </div>
+
+            <div class="modal-body custom-scrollbar" id="modal-body">
+                <img id="modal-image" src="" alt="Screenshot"
+                    class="w-full max-h-96 object-contain rounded-lg mb-6 border border-zinc-600">
+                <div id="modal-details" class="text-zinc-300">
                     <!-- Detalhes serão inseridos aqui -->
                 </div>
             </div>
-            <div class="mt-6 flex space-x-4">
-                <button id="mark-false-positive" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+
+            <div class="modal-footer flex justify-end space-x-4">
+                <button id="mark-false-positive"
+                    class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors">
                     Marcar como Falso Positivo
                 </button>
-                <button id="add-note-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <button id="add-note-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
                     Adicionar Nota
                 </button>
             </div>
@@ -294,7 +618,17 @@
 
         // Estado da aplicação
         let currentPage = 1;
-        let currentFilter = 'all';
+        let activeFilters = {
+            period: 'week',
+            dateFrom: null,
+            dateTo: null,
+            riskLevels: ['HIGH', 'MEDIUM', 'LOW'],
+            types: ['INTRUSAO', 'MOVIMENTO_SUSPEITO'],
+            minScore: 0,
+            maxScore: 1,
+            statuses: ['reviewed', 'unreviewed'],
+            search: ''
+        };
         let totalPages = 1;
         let currentAnomalyId = null;
 
@@ -303,16 +637,19 @@
         const loadingMessage = document.getElementById('loading-message');
         const modal = document.getElementById('screenshot-modal');
         const toast = document.getElementById('toast');
+        const sidebar = document.getElementById('filter-sidebar');
+        const mainContent = document.getElementById('main-content');
 
         // Charts
         let hourlyChart, typeChart;
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function () {
-            loadStats();
-            loadAnomalies();
             setupEventListeners();
             setupCharts();
+            setupFilters();
+            loadStats();
+            loadAnomalies();
 
             // Auto-refresh a cada 30 segundos
             setInterval(() => {
@@ -328,17 +665,6 @@
                 loadAnomalies();
             });
 
-            // Filtros
-            document.querySelectorAll('.filter-chip').forEach(chip => {
-                chip.addEventListener('click', function () {
-                    document.querySelector('.filter-chip.active').classList.remove('active');
-                    this.classList.add('active');
-                    currentFilter = this.dataset.filter;
-                    currentPage = 1;
-                    loadAnomalies();
-                });
-            });
-
             // Modal
             document.querySelector('.close').addEventListener('click', closeModal);
             window.addEventListener('click', function (event) {
@@ -346,6 +672,10 @@
                     closeModal();
                 }
             });
+
+            // Ações do modal
+            document.getElementById('mark-false-positive').addEventListener('click', markFalsePositive);
+            document.getElementById('add-note-btn').addEventListener('click', addNote);
 
             // Paginação
             document.getElementById('prev-btn').addEventListener('click', () => {
@@ -361,10 +691,146 @@
                     loadAnomalies();
                 }
             });
+        }
 
-            // Ações do modal
-            document.getElementById('mark-false-positive').addEventListener('click', markFalsePositive);
-            document.getElementById('add-note-btn').addEventListener('click', addNote);
+        function setupFilters() {
+            // Botões de período
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+                    this.classList.add('bg-blue-600', 'text-white');
+                    activeFilters.period = this.dataset.period;
+                });
+            });
+
+            // Range sliders
+            const minScoreSlider = document.getElementById('min-score');
+            const maxScoreSlider = document.getElementById('max-score');
+            const minScoreValue = document.getElementById('min-score-value');
+            const maxScoreValue = document.getElementById('max-score-value');
+
+            minScoreSlider.addEventListener('input', function () {
+                const value = parseFloat(this.value);
+                minScoreValue.textContent = value.toFixed(4);
+                activeFilters.minScore = value;
+
+                // Garantir que min não seja maior que max
+                if (value > parseFloat(maxScoreSlider.value)) {
+                    maxScoreSlider.value = value;
+                    maxScoreValue.textContent = value.toFixed(4);
+                    activeFilters.maxScore = value;
+                }
+            });
+
+            maxScoreSlider.addEventListener('input', function () {
+                const value = parseFloat(this.value);
+                maxScoreValue.textContent = value.toFixed(4);
+                activeFilters.maxScore = value;
+
+                // Garantir que max não seja menor que min
+                if (value < parseFloat(minScoreSlider.value)) {
+                    minScoreSlider.value = value;
+                    minScoreValue.textContent = value.toFixed(4);
+                    activeFilters.minScore = value;
+                }
+            });
+
+            // Aplicar filtros automaticamente quando houver mudanças
+            document.querySelectorAll('.risk-filter, .type-filter, .status-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', updateActiveFilters);
+            });
+
+            document.getElementById('search-input').addEventListener('input', debounce(function () {
+                activeFilters.search = this.value;
+                applyFilters();
+            }, 500));
+        }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+
+            const icon = document.getElementById('toggle-icon');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.innerHTML = '<path d="M3 12h18m-9-9l9 9-9 9"/>';
+            } else {
+                icon.innerHTML = '<path d="M21 6H3M21 12H3M21 18H3"/>';
+            }
+        }
+
+        function updateActiveFilters() {
+            // Níveis de risco
+            activeFilters.riskLevels = Array.from(document.querySelectorAll('.risk-filter:checked'))
+                .map(cb => cb.value);
+
+            // Tipos de anomalia
+            activeFilters.types = Array.from(document.querySelectorAll('.type-filter:checked'))
+                .map(cb => cb.value);
+
+            // Status
+            activeFilters.statuses = Array.from(document.querySelectorAll('.status-filter:checked'))
+                .map(cb => cb.value);
+        }
+
+        function applyFilters() {
+            updateActiveFilters();
+
+            // Datas personalizadas
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+
+            if (dateFrom) activeFilters.dateFrom = dateFrom;
+            if (dateTo) activeFilters.dateTo = dateTo;
+
+            currentPage = 1;
+            loadAnomalies();
+        }
+
+        function clearFilters() {
+            // Reset todos os filtros
+            activeFilters = {
+                period: 'week',
+                dateFrom: null,
+                dateTo: null,
+                riskLevels: ['HIGH', 'MEDIUM', 'LOW'],
+                types: ['INTRUSAO', 'MOVIMENTO_SUSPEITO'],
+                minScore: 0,
+                maxScore: 1,
+                statuses: ['reviewed', 'unreviewed'],
+                search: ''
+            };
+
+            // Reset UI
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+            document.querySelector('[data-period="week"]').classList.add('bg-blue-600', 'text-white');
+
+            document.querySelectorAll('.risk-filter, .type-filter').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.status-filter').forEach(cb => {
+                cb.checked = cb.value !== 'false_positive';
+            });
+
+            document.getElementById('min-score').value = 0;
+            document.getElementById('max-score').value = 1;
+            document.getElementById('min-score-value').textContent = '0.0000';
+            document.getElementById('max-score-value').textContent = '1.0000';
+            document.getElementById('search-input').value = '';
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+
+            currentPage = 1;
+            loadAnomalies();
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
         async function loadStats() {
@@ -387,15 +853,36 @@
         async function loadAnomalies() {
             try {
                 loadingMessage.style.display = 'block';
-                anomalyList.innerHTML = '<div id="loading-message" class="text-center text-gray-400 py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>Carregando anomalias...</div>';
+                anomalyList.innerHTML = '<div id="loading-message" class="text-center text-zinc-400 py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>Carregando anomalias...</div>';
 
                 let url = `${API_BASE}/anomalies?page=${currentPage}&limit=20`;
-                if (currentFilter !== 'all') {
-                    if (['HIGH', 'MEDIUM', 'LOW'].includes(currentFilter)) {
-                        url += `&risk_level=${currentFilter}`;
-                    } else {
-                        url += `&type=${currentFilter}`;
+
+                // Aplicar filtros de período
+                if (activeFilters.period) {
+                    const now = new Date();
+                    let hoursBack = 168; // semana por padrão
+
+                    switch (activeFilters.period) {
+                        case 'today': hoursBack = 24; break;
+                        case 'yesterday': hoursBack = 48; break;
+                        case 'week': hoursBack = 168; break;
+                        case 'month': hoursBack = 720; break;
                     }
+
+                    url += `&hours_back=${hoursBack}`;
+                }
+
+                // Aplicar outros filtros
+                if (activeFilters.riskLevels.length > 0 && activeFilters.riskLevels.length < 3) {
+                    url += `&risk_level=${activeFilters.riskLevels.join(',')}`;
+                }
+
+                if (activeFilters.types.length > 0 && activeFilters.types.length < 2) {
+                    url += `&type=${activeFilters.types.join(',')}`;
+                }
+
+                if (activeFilters.search) {
+                    url += `&search=${encodeURIComponent(activeFilters.search)}`;
                 }
 
                 const response = await fetch(url);
@@ -416,7 +903,7 @@
 
         function displayAnomalies(anomalies) {
             if (anomalies.length === 0) {
-                anomalyList.innerHTML = '<p class="text-center text-gray-400 py-8">Nenhuma anomalia encontrada</p>';
+                anomalyList.innerHTML = '<p class="text-center text-zinc-400 py-8">Nenhuma anomalia encontrada com os filtros aplicados</p>';
                 return;
             }
 
@@ -428,41 +915,44 @@
                             ${anomaly.screenshot_filename ?
                     `<img src="${API_BASE}/screenshot/${anomaly.screenshot_path.replace('../screenshots/', '')}/${anomaly.screenshot_filename}" 
                                      alt="Screenshot" class="screenshot-thumb" onclick="openModal(${anomaly.id})">` :
-                    `<div class="w-30 h-20 bg-gray-600 rounded flex items-center justify-center text-gray-400">
-                                    <span>📷</span>
+                    `<div class="w-30 h-20 bg-zinc-600 rounded-lg flex items-center justify-center text-zinc-400">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                        <circle cx="12" cy="13" r="4"/>
+                                    </svg>
                                  </div>`
                 }
                         </div>
                         
                         <!-- Conteúdo Principal -->
                         <div class="flex-grow">
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between mb-3">
                                 <div class="flex items-center space-x-3">
                                     <span class="font-bold text-lg ${getRiskColor(anomaly.risk_level)}">${anomaly.type}</span>
-                                    <span class="filter-chip text-xs ${getRiskBadge(anomaly.risk_level)}">${anomaly.risk_level}</span>
-                                    ${anomaly.is_false_positive ? '<span class="bg-gray-500 text-white text-xs px-2 py-1 rounded">FALSO POSITIVO</span>' : ''}
+                                    <span class="px-3 py-1 text-xs font-medium rounded-full ${getRiskBadge(anomaly.risk_level)}">${anomaly.risk_level}</span>
+                                    ${anomaly.is_false_positive ? '<span class="bg-zinc-500 text-white text-xs px-2 py-1 rounded-full">FALSO POSITIVO</span>' : ''}
                                 </div>
-                                <span class="text-sm text-gray-400">${formatDate(anomaly.timestamp)}</span>
+                                <span class="text-sm text-zinc-400">${formatDate(anomaly.timestamp)}</span>
                             </div>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
                                 <div>
-                                    <p class="text-gray-400">Localização:</p>
+                                    <p class="text-zinc-400">Localização:</p>
                                     <p class="text-white font-medium">${anomaly.location}</p>
                                 </div>
                                 <div>
-                                    <p class="text-gray-400">Câmara:</p>
+                                    <p class="text-zinc-400">Câmara:</p>
                                     <p class="text-white font-medium">${anomaly.camera_id}</p>
                                 </div>
                                 <div>
-                                    <p class="text-gray-400">Score:</p>
+                                    <p class="text-zinc-400">Score:</p>
                                     <p class="text-white font-medium">${anomaly.combined_score.toFixed(4)}</p>
                                 </div>
                             </div>
                             
                             ${anomaly.notes ? `
-                                <div class="mt-3 p-3 bg-gray-700 rounded-lg">
-                                    <p class="text-sm text-gray-300"><strong>Nota:</strong> ${anomaly.notes}</p>
+                                <div class="mt-3 p-3 bg-zinc-700 rounded-lg">
+                                    <p class="text-sm text-zinc-300"><strong>Nota:</strong> ${anomaly.notes}</p>
                                 </div>
                             ` : ''}
                         </div>
@@ -473,7 +963,7 @@
                                 Ver Detalhes
                             </button>
                             ${!anomaly.is_false_positive ? `
-                                <button onclick="quickMarkFalsePositive(${anomaly.id})" class="block w-full bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-lg transition-colors">
+                                <button onclick="quickMarkFalsePositive(${anomaly.id})" class="block w-full bg-zinc-600 hover:bg-zinc-500 text-white text-sm px-3 py-2 rounded-lg transition-colors">
                                     Falso Positivo
                                 </button>
                             ` : ''}
@@ -513,45 +1003,46 @@
                     const imageUrl = `${API_BASE}/screenshot/${anomaly.screenshot_path}/${anomaly.screenshot_filename}`;
                     document.getElementById('modal-image').src = imageUrl;
                     document.getElementById('modal-image').style.display = 'block';
-
-                    // Debug da imagem
-                    console.log('🖼️ Carregando imagem:', imageUrl);
                 } else {
                     document.getElementById('modal-image').style.display = 'none';
                 }
 
                 document.getElementById('modal-details').innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h4 class="font-semibold text-white mb-2">Informações Básicas</h4>
-                            <p><strong>Timestamp:</strong> ${formatDate(anomaly.timestamp)}</p>
-                            <p><strong>Tipo:</strong> ${anomaly.type}</p>
-                            <p><strong>Localização:</strong> ${anomaly.location}</p>
-                            <p><strong>Câmara:</strong> ${anomaly.camera_id}</p>
-                            <p><strong>Nível de Risco:</strong> ${anomaly.risk_level}</p>
+                            <h4 class="font-semibold text-white mb-3 text-lg">Informações Básicas</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-zinc-400">Timestamp:</span> <span class="text-white">${formatDate(anomaly.timestamp)}</span></p>
+                                <p><span class="text-zinc-400">Tipo:</span> <span class="text-white">${anomaly.type}</span></p>
+                                <p><span class="text-zinc-400">Localização:</span> <span class="text-white">${anomaly.location}</span></p>
+                                <p><span class="text-zinc-400">Câmara:</span> <span class="text-white">${anomaly.camera_id}</span></p>
+                                <p><span class="text-zinc-400">Nível de Risco:</span> <span class="text-white">${anomaly.risk_level}</span></p>
+                            </div>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-white mb-2">Scores de Detecção</h4>
-                            <p><strong>Score CAE:</strong> ${anomaly.cae_score ? anomaly.cae_score.toFixed(4) : 'N/A'}</p>
-                            <p><strong>Score ConvLSTM:</strong> ${anomaly.convlstm_score ? anomaly.convlstm_score.toFixed(4) : 'N/A'}</p>
-                            <p><strong>Score Combinado:</strong> ${anomaly.combined_score.toFixed(4)}</p>
-                            <p><strong>Duração Detecção:</strong> ${anomaly.detection_duration ? (anomaly.detection_duration * 1000).toFixed(2) + 'ms' : 'N/A'}</p>
-                            <p><strong>Frame:</strong> #${anomaly.frame_number || 'N/A'}</p>
-                            <p><strong>Resolução:</strong> ${anomaly.frame_resolution || 'N/A'}</p>
+                            <h4 class="font-semibold text-white mb-3 text-lg">Scores de Detecção</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-zinc-400">Score CAE:</span> <span class="text-white">${anomaly.cae_score ? anomaly.cae_score.toFixed(4) : 'N/A'}</span></p>
+                                <p><span class="text-zinc-400">Score ConvLSTM:</span> <span class="text-white">${anomaly.convlstm_score ? anomaly.convlstm_score.toFixed(4) : 'N/A'}</span></p>
+                                <p><span class="text-zinc-400">Score Combinado:</span> <span class="text-white">${anomaly.combined_score.toFixed(4)}</span></p>
+                                <p><span class="text-zinc-400">Duração Detecção:</span> <span class="text-white">${anomaly.detection_duration ? (anomaly.detection_duration * 1000).toFixed(2) + 'ms' : 'N/A'}</span></p>
+                                <p><span class="text-zinc-400">Frame:</span> <span class="text-white">#${anomaly.frame_number || 'N/A'}</span></p>
+                                <p><span class="text-zinc-400">Resolução:</span> <span class="text-white">${anomaly.frame_resolution || 'N/A'}</span></p>
+                            </div>
                         </div>
                     </div>
                     
                     ${anomaly.notes ? `
-                        <div class="mt-4">
-                            <h4 class="font-semibold text-white mb-2">Notas</h4>
-                            <p class="bg-gray-700 p-3 rounded-lg">${anomaly.notes}</p>
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-white mb-3 text-lg">Notas</h4>
+                            <p class="bg-zinc-700 p-4 rounded-lg text-zinc-200">${anomaly.notes}</p>
                         </div>
                     ` : ''}
                     
                     ${anomaly.additional_data && Object.keys(anomaly.additional_data).length > 0 ? `
-                        <div class="mt-4">
-                            <h4 class="font-semibold text-white mb-2">Dados Adicionais</h4>
-                            <pre class="bg-gray-800 p-3 rounded-lg text-sm overflow-auto">${JSON.stringify(anomaly.additional_data, null, 2)}</pre>
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-white mb-3 text-lg">Dados Adicionais</h4>
+                            <pre class="bg-zinc-800 p-4 rounded-lg text-sm overflow-auto text-zinc-300">${JSON.stringify(anomaly.additional_data, null, 2)}</pre>
                         </div>
                     ` : ''}
                 `;
@@ -573,7 +1064,7 @@
             if (!currentAnomalyId) return;
 
             const notes = prompt('Motivo para marcar como falso positivo (opcional):');
-            if (notes === null) return; // Cancelado
+            if (notes === null) return;
 
             try {
                 const response = await fetch(`${API_BASE}/anomalies/${currentAnomalyId}/mark_false_positive`, {
@@ -640,7 +1131,7 @@
 
                 if (response.ok) {
                     showToast('Nota adicionada', 'success');
-                    openModal(currentAnomalyId); // Recarregar modal
+                    openModal(currentAnomalyId);
                     loadAnomalies();
                 } else {
                     showToast('Erro ao adicionar nota', 'error');
@@ -652,7 +1143,6 @@
         }
 
         function setupCharts() {
-            // Gráfico de barras por hora
             const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
             hourlyChart = new Chart(hourlyCtx, {
                 type: 'line',
@@ -687,7 +1177,6 @@
                 }
             });
 
-            // Gráfico de pizza por tipo
             const typeCtx = document.getElementById('typeChart').getContext('2d');
             typeChart = new Chart(typeCtx, {
                 type: 'doughnut',
@@ -716,7 +1205,6 @@
         }
 
         function updateCharts(stats) {
-            // Atualizar gráfico por hora
             const hourlyData = new Array(24).fill(0);
             Object.entries(stats.hourly_data || {}).forEach(([hour, count]) => {
                 hourlyData[parseInt(hour)] = count;
@@ -724,7 +1212,6 @@
             hourlyChart.data.datasets[0].data = hourlyData;
             hourlyChart.update();
 
-            // Atualizar gráfico por tipo
             const typeLabels = Object.keys(stats.by_type || {});
             const typeData = Object.values(stats.by_type || {});
             typeChart.data.labels = typeLabels;
@@ -749,16 +1236,16 @@
                 case 'HIGH': return 'text-red-400';
                 case 'MEDIUM': return 'text-orange-400';
                 case 'LOW': return 'text-green-400';
-                default: return 'text-gray-400';
+                default: return 'text-zinc-400';
             }
         }
 
         function getRiskBadge(risk) {
             switch (risk) {
-                case 'HIGH': return 'bg-red-600';
-                case 'MEDIUM': return 'bg-orange-600';
-                case 'LOW': return 'bg-green-600';
-                default: return 'bg-gray-600';
+                case 'HIGH': return 'bg-red-600 text-white';
+                case 'MEDIUM': return 'bg-orange-600 text-white';
+                case 'LOW': return 'bg-green-600 text-white';
+                default: return 'bg-zinc-600 text-white';
             }
         }
 
