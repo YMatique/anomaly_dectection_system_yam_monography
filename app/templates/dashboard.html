@@ -36,18 +36,18 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, #18181b 0%, #1e293b 100%);
             color: #e2e8f0;
         }
 
         .bg-card {
-            background-color: #1e293b;
+            background-color: #18181b;
             border: 1px solid #334155;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            background: linear-gradient(135deg, #18181b 0%, #3f3f46 100%);
             border-left: 4px solid #3b82f6;
             transition: all 0.3s ease;
         }
@@ -70,7 +70,7 @@
         }
 
         .anomaly-card {
-            background-color: #374151;
+            background-color: #27272a;
             border-left: 4px solid #ef4444;
             transition: all 0.3s ease;
         }
@@ -122,7 +122,7 @@
             width: 95%;
             max-width: 900px;
             max-height: 90vh;
-            background-color: #1e293b;
+            background-color: #27272a;
             border-radius: 16px;
             overflow: hidden;
             display: flex;
@@ -132,7 +132,7 @@
         .modal-header {
             padding: 24px 32px;
             border-bottom: 1px solid #334155;
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            background: linear-gradient(135deg, #27272a 0%, #334155 100%);
         }
 
         .modal-body {
@@ -850,6 +850,58 @@
             }
         }
 
+        // async function loadAnomalies() {
+        //     try {
+        //         loadingMessage.style.display = 'block';
+        //         anomalyList.innerHTML = '<div id="loading-message" class="text-center text-zinc-400 py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>Carregando anomalias...</div>';
+
+        //         let url = `${API_BASE}/anomalies?page=${currentPage}&limit=20`;
+
+        //         // Aplicar filtros de período
+        //         if (activeFilters.period) {
+        //             const now = new Date();
+        //             let hoursBack = 168; // semana por padrão
+
+        //             switch (activeFilters.period) {
+        //                 case 'today': hoursBack = 24; break;
+        //                 case 'yesterday': hoursBack = 48; break;
+        //                 case 'week': hoursBack = 168; break;
+        //                 case 'month': hoursBack = 720; break;
+        //             }
+
+        //             url += `&hours_back=${hoursBack}`;
+        //         }
+
+        //         // Aplicar outros filtros
+        //         if (activeFilters.riskLevels.length > 0 && activeFilters.riskLevels.length < 3) {
+        //             url += `&risk_level=${activeFilters.riskLevels.join(',')}`;
+        //         }
+
+        //         if (activeFilters.types.length > 0 && activeFilters.types.length < 2) {
+        //             url += `&type=${activeFilters.types.join(',')}`;
+        //         }
+
+        //         if (activeFilters.search) {
+        //             url += `&search=${encodeURIComponent(activeFilters.search)}`;
+        //         }
+
+        //         const response = await fetch(url);
+        //         const data = await response.json();
+
+        //         displayAnomalies(data.anomalies);
+        //         updatePagination(data.pagination);
+
+        //         document.getElementById('total-count').textContent =
+        //             `${data.pagination.total} anomalias encontradas`;
+
+        //     } catch (error) {
+        //         console.error('Erro ao carregar anomalias:', error);
+        //         anomalyList.innerHTML = '<p class="text-center text-red-400">Erro ao carregar anomalias</p>';
+        //         showToast('Erro ao carregar anomalias', 'error');
+        //     }
+        // }
+
+
         async function loadAnomalies() {
             try {
                 loadingMessage.style.display = 'block';
@@ -857,42 +909,91 @@
 
                 let url = `${API_BASE}/anomalies?page=${currentPage}&limit=20`;
 
-                // Aplicar filtros de período
-                if (activeFilters.period) {
-                    const now = new Date();
-                    let hoursBack = 168; // semana por padrão
-
-                    switch (activeFilters.period) {
-                        case 'today': hoursBack = 24; break;
-                        case 'yesterday': hoursBack = 48; break;
-                        case 'week': hoursBack = 168; break;
-                        case 'month': hoursBack = 720; break;
-                    }
-
-                    url += `&hours_back=${hoursBack}`;
+                // 🔥 PERÍODO - converter para hours_back
+                let hoursBack = 168; // semana por padrão
+                switch (activeFilters.period) {
+                    case 'today': hoursBack = 24; break;
+                    case 'yesterday': hoursBack = 48; break;
+                    case 'week': hoursBack = 168; break;
+                    case 'month': hoursBack = 720; break;
                 }
+                url += `&hours_back=${hoursBack}`;
 
-                // Aplicar outros filtros
+                // 🔥 RISCO - só se não estiverem todos selecionados
                 if (activeFilters.riskLevels.length > 0 && activeFilters.riskLevels.length < 3) {
-                    url += `&risk_level=${activeFilters.riskLevels.join(',')}`;
+                    // API atual só aceita 1 risk_level, vamos pegar o primeiro
+                    url += `&risk_level=${activeFilters.riskLevels[0]}`;
                 }
 
+                // 🔥 TIPO - só se não estiverem todos selecionados  
                 if (activeFilters.types.length > 0 && activeFilters.types.length < 2) {
-                    url += `&type=${activeFilters.types.join(',')}`;
+                    url += `&type=${activeFilters.types[0]}`;
                 }
 
-                if (activeFilters.search) {
-                    url += `&search=${encodeURIComponent(activeFilters.search)}`;
-                }
+                // 🔥 FALSOS POSITIVOS
+                const includeFalsePositives = activeFilters.statuses.includes('false_positive');
+                url += `&include_false_positives=${includeFalsePositives}`;
+
+                console.log('🔍 URL da API:', url); // Debug
 
                 const response = await fetch(url);
                 const data = await response.json();
 
-                displayAnomalies(data.anomalies);
-                updatePagination(data.pagination);
+                // 🔥 FILTROS LOCAIS (no frontend) para o que a API não suporta
+                let filteredAnomalies = data.anomalies;
+
+                // Filtrar por múltiplos níveis de risco (se necessário)
+                if (activeFilters.riskLevels.length > 0 && activeFilters.riskLevels.length < 3) {
+                    filteredAnomalies = filteredAnomalies.filter(a =>
+                        activeFilters.riskLevels.includes(a.risk_level)
+                    );
+                }
+
+                // Filtrar por múltiplos tipos (se necessário)
+                if (activeFilters.types.length > 0 && activeFilters.types.length < 2) {
+                    filteredAnomalies = filteredAnomalies.filter(a =>
+                        activeFilters.types.includes(a.type)
+                    );
+                }
+
+                // Filtrar por score range
+                filteredAnomalies = filteredAnomalies.filter(a =>
+                    a.combined_score >= activeFilters.minScore &&
+                    a.combined_score <= activeFilters.maxScore
+                );
+
+                // Filtrar por pesquisa (notas)
+                if (activeFilters.search.trim()) {
+                    const searchTerm = activeFilters.search.toLowerCase();
+                    filteredAnomalies = filteredAnomalies.filter(a =>
+                        (a.notes && a.notes.toLowerCase().includes(searchTerm)) ||
+                        a.type.toLowerCase().includes(searchTerm) ||
+                        a.location.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                // Filtrar por status
+                filteredAnomalies = filteredAnomalies.filter(a => {
+                    if (activeFilters.statuses.includes('false_positive') && a.is_false_positive) return true;
+                    if (activeFilters.statuses.includes('reviewed') && a.reviewed && !a.is_false_positive) return true;
+                    if (activeFilters.statuses.includes('unreviewed') && !a.reviewed && !a.is_false_positive) return true;
+                    return false;
+                });
+
+                displayAnomalies(filteredAnomalies);
+
+                // Ajustar paginação (simplificada porque filtramos localmente)
+                const pagination = {
+                    page: currentPage,
+                    pages: Math.ceil(filteredAnomalies.length / 20),
+                    total: filteredAnomalies.length,
+                    has_prev: currentPage > 1,
+                    has_next: currentPage < Math.ceil(filteredAnomalies.length / 20)
+                };
+                updatePagination(pagination);
 
                 document.getElementById('total-count').textContent =
-                    `${data.pagination.total} anomalias encontradas`;
+                    `${filteredAnomalies.length} anomalias encontradas`;
 
             } catch (error) {
                 console.error('Erro ao carregar anomalias:', error);
@@ -901,6 +1002,48 @@
             }
         }
 
+        // 🔥 Melhorar a função updateActiveFilters para debug
+        function updateActiveFilters() {
+            // Níveis de risco
+            activeFilters.riskLevels = Array.from(document.querySelectorAll('.risk-filter:checked'))
+                .map(cb => cb.value);
+
+            // Tipos de anomalia
+            activeFilters.types = Array.from(document.querySelectorAll('.type-filter:checked'))
+                .map(cb => cb.value);
+
+            // Status
+            activeFilters.statuses = Array.from(document.querySelectorAll('.status-filter:checked'))
+                .map(cb => cb.value);
+
+            // Debug
+            console.log('🎯 Filtros ativos:', activeFilters);
+        }
+
+        // 🔥 Adicionar feedback visual nos filtros
+        function applyFilters() {
+            updateActiveFilters();
+
+            // Datas personalizadas
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+
+            if (dateFrom) activeFilters.dateFrom = dateFrom;
+            if (dateTo) activeFilters.dateTo = dateTo;
+
+            // Feedback visual
+            showToast('Filtros aplicados!', 'success');
+
+            currentPage = 1;
+            loadAnomalies();
+        }
+
+        // 🔥 Melhorar função de pesquisa
+        document.getElementById('search-input').addEventListener('input', debounce(function () {
+            activeFilters.search = this.value;
+            console.log('🔍 Pesquisando:', activeFilters.search);
+            applyFilters();
+        }, 500));
         function displayAnomalies(anomalies) {
             if (anomalies.length === 0) {
                 anomalyList.innerHTML = '<p class="text-center text-zinc-400 py-8">Nenhuma anomalia encontrada com os filtros aplicados</p>';

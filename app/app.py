@@ -78,119 +78,145 @@ def dashboard():
     return render_template('dashboard.html')
 
 @app.route('/api/anomalies', methods=['GET'])
-@app.route('/api/anomalies', methods=['GET'])
 def get_anomalies():
     """
-    API expandida para obter anomalias com filtros e paginação - CORRIGIDA.
+    API expandida com suporte a TODOS os filtros avançados do frontend
     """
     try:
-        print("🔍 Buscando anomalias...")  # Debug
+        print("🔍 Buscando anomalias com filtros avançados...")
         
-        # Parâmetros de query
+        # Parâmetros básicos
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 50))
-        risk_level = request.args.get('risk_level', '')
-        camera_id = request.args.get('camera_id', '')
-        anomaly_type = request.args.get('type', '')
-        hours_back = int(request.args.get('hours_back', 168))  # 7 dias por padrão
-        include_false_positives = request.args.get('include_false_positives', 'true').lower() == 'true'
         
-        print(f"📊 Parâmetros: page={page}, limit={limit}, hours_back={hours_back}")
+        # 🔥 NOVOS FILTROS AVANÇADOS
+        # Período
+        hours_back = int(request.args.get('hours_back', 168))
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        
+        # Múltiplos níveis de risco (separados por vírgula)
+        risk_levels = request.args.get('risk_level', '').split(',') if request.args.get('risk_level') else []
+        risk_levels = [r.strip() for r in risk_levels if r.strip()]
+        
+        # Múltiplos tipos (separados por vírgula)
+        anomaly_types = request.args.get('type', '').split(',') if request.args.get('type') else []
+        anomaly_types = [t.strip() for t in anomaly_types if t.strip()]
+        
+        # Score range
+        min_score = float(request.args.get('min_score', 0))
+        max_score = float(request.args.get('max_score', 1))
+        
+        # Status filters
+        include_false_positives = request.args.get('include_false_positives', 'true').lower() == 'true'
+        include_reviewed = request.args.get('include_reviewed', 'true').lower() == 'true'
+        include_unreviewed = request.args.get('include_unreviewed', 'true').lower() == 'true'
+        
+        # Pesquisa
+        search_term = request.args.get('search', '').strip()
+        
+        print(f"📊 Filtros recebidos:")
+        print(f"  - Período: {hours_back}h atrás")
+        print(f"  - Risk levels: {risk_levels}")
+        print(f"  - Types: {anomaly_types}")
+        print(f"  - Score range: {min_score} - {max_score}")
+        print(f"  - Pesquisa: '{search_term}'")
         
         # Calcular offset
         offset = (page - 1) * limit
         
-        # Construir query com filtros
+        # 🔥 CONSTRUIR QUERY DINAMICAMENTE
         where_conditions = []
         params = []
         
-        # Filtro de tempo (mais permissivo para debug)
-        time_threshold = datetime.now() - timedelta(hours=hours_back)
-        where_conditions.append("datetime(timestamp) >= ?")
-        params.append(time_threshold.isoformat())
+        # Filtro de tempo
+        if date_from and date_to:
+            where_conditions.append("datetime(timestamp) BETWEEN ? AND ?")
+            params.extend([date_from, date_to])
+        else:
+            time_threshold = datetime.now() - timedelta(hours=hours_back)
+            where_conditions.append("datetime(timestamp) >= ?")
+            params.append(time_threshold.isoformat())
         
-        # Filtros opcionais
-        if risk_level:
-            where_conditions.append("risk_level = ?")
-            params.append(risk_level)
-            
-        if camera_id:
-            where_conditions.append("camera_id = ?")
-            params.append(camera_id)
-            
-        if anomaly_type:
-            where_conditions.append("type = ?")
-            params.append(anomaly_type)
-            
-        if not include_false_positives:
-            where_conditions.append("(is_false_positive = 0 OR is_false_positive IS NULL)")
+        # Filtros de nível de risco (múltiplos)
+        if risk_levels:
+            placeholders = ','.join(['?' for _ in risk_levels])
+            where_conditions.append(f"risk_level IN ({placeholders})")
+            params.extend(risk_levels)
+        
+        # Filtros de tipo (múltiplos)
+        if anomaly_types:
+            placeholders = ','.join(['?' for _ in anomaly_types])
+            where_conditions.append(f"type IN ({placeholders})")
+            params.extend(anomaly_types)
+        
+        # Score range
+        if min_score > 0 or max_score < 1:
+            where_conditions.append("combined_score BETWEEN ? AND ?")
+            params.extend([min_score, max_score])
+        
+        # Status filters
+        status_conditions = []
+        if include_false_positives:
+            status_conditions.append("is_false_positive = 1")
+        if include_reviewed:
+            status_conditions.append("(reviewed = 1 AND (is_false_positive = 0 OR is_false_positive IS NULL))")
+        if include_unreviewed:
+            status_conditions.append("(reviewed = 0 OR reviewed IS NULL) AND (is_false_positive = 0 OR is_false_positive IS NULL)")
+        
+        if status_conditions:
+            where_conditions.append(f"({' OR '.join(status_conditions)})")
+        
+        # Pesquisa em múltiplos campos
+        if search_term:
+            search_conditions = [
+                "notes LIKE ?",
+                "type LIKE ?", 
+                "location LIKE ?"
+            ]
+            where_conditions.append(f"({' OR '.join(search_conditions)})")
+            search_param = f"%{search_term}%"
+            params.extend([search_param, search_param, search_param])
         
         where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
         
         print(f"🔎 Query WHERE: {where_clause}")
-        print(f"🔎 Parâmetros: {params}")
+        print(f"🔎 Parâmetros: {params[:5]}...")  # Só primeiros 5 para não sobrecarregar log
         
         with sqlite3.connect(DB_NAME) as conn:
             cursor = conn.cursor()
-            
-            # Primeiro, verificar se a tabela existe e tem dados
-            cursor.execute("SELECT COUNT(*) FROM anomalies_enhanced")
-            total_records = cursor.fetchone()[0]
-            print(f"📈 Total de registos na BD: {total_records}")
-            
-            if total_records == 0:
-                # Retornar resposta vazia mas válida
-                return jsonify({
-                    'anomalies': [],
-                    'pagination': {
-                        'page': page,
-                        'limit': limit,
-                        'total': 0,
-                        'pages': 0,
-                        'has_next': False,
-                        'has_prev': False
-                    }
-                })
             
             # Query principal com paginação
             query = f"""
                 SELECT * FROM anomalies_enhanced 
                 {where_clause}
-                ORDER BY id DESC 
+                ORDER BY datetime(timestamp) DESC 
                 LIMIT ? OFFSET ?
             """
             params_with_pagination = params + [limit, offset]
             
-            print(f"🔎 Query completa: {query}")
-            print(f"🔎 Parâmetros finais: {params_with_pagination}")
-            
             cursor.execute(query, params_with_pagination)
             anomalies = cursor.fetchall()
-            
-            print(f"📋 Anomalias encontradas: {len(anomalies)}")
             
             # Query para contar total
             count_query = f"SELECT COUNT(*) FROM anomalies_enhanced {where_clause}"
             cursor.execute(count_query, params)
             total_count = cursor.fetchone()[0]
             
-            print(f"📊 Total com filtros: {total_count}")
+            print(f"📋 Anomalias encontradas: {len(anomalies)} de {total_count} total")
             
             # Obter nomes das colunas
             cursor.execute("PRAGMA table_info(anomalies_enhanced)")
             columns_info = cursor.fetchall()
-            columns = [col[1] for col in columns_info]  # col[1] é o nome da coluna
-            
-            print(f"🏛️ Colunas da tabela: {columns}")
+            columns = [col[1] for col in columns_info]
             
             # Formatar resultados
             result = []
-            
             for row in anomalies:
                 try:
                     anomaly_dict = dict(zip(columns, row))
                     
-                    # Garantir que campos críticos existem
+                    # Garantir campos críticos
                     anomaly_dict['id'] = anomaly_dict.get('id', 0)
                     anomaly_dict['type'] = anomaly_dict.get('type', 'UNKNOWN')
                     anomaly_dict['combined_score'] = anomaly_dict.get('combined_score', 0.0)
@@ -199,8 +225,9 @@ def get_anomalies():
                     anomaly_dict['location'] = anomaly_dict.get('location', 'Unknown')
                     anomaly_dict['camera_id'] = anomaly_dict.get('camera_id', 'CAM01')
                     anomaly_dict['is_false_positive'] = bool(anomaly_dict.get('is_false_positive', False))
+                    anomaly_dict['reviewed'] = bool(anomaly_dict.get('reviewed', False))
                     
-                    # Parse additional_data se existir
+                    # Parse additional_data
                     if anomaly_dict.get('additional_data'):
                         try:
                             anomaly_dict['additional_data'] = json.loads(anomaly_dict['additional_data'])
@@ -218,7 +245,7 @@ def get_anomalies():
             # Calcular paginação
             total_pages = (total_count + limit - 1) // limit if total_count > 0 else 0
             
-            # Resposta com metadata de paginação
+            # Resposta com metadata
             response = {
                 'anomalies': result,
                 'pagination': {
@@ -228,10 +255,18 @@ def get_anomalies():
                     'pages': total_pages,
                     'has_next': offset + limit < total_count,
                     'has_prev': page > 1
+                },
+                'filters_applied': {
+                    'hours_back': hours_back,
+                    'risk_levels': risk_levels,
+                    'types': anomaly_types,
+                    'score_range': [min_score, max_score],
+                    'search_term': search_term,
+                    'total_found': total_count
                 }
             }
             
-            print(f"✅ Resposta preparada: {len(result)} anomalias, {total_pages} páginas")
+            print(f"✅ Resposta preparada: {len(result)} anomalias")
             return jsonify(response)
             
     except Exception as e:
@@ -239,24 +274,30 @@ def get_anomalies():
         import traceback
         traceback.print_exc()
         
-        # Retornar erro mais detalhado
         return jsonify({
             "error": f"Erro interno do servidor: {str(e)}",
-            "details": "Verifique os logs do servidor para mais informações"
+            "details": "Verifique os logs para mais informações"
         }), 500
+
+
+# @app.route('/api/anomalies', methods=['GET'])
 # def get_anomalies():
 #     """
-#     API expandida para obter anomalias com filtros e paginação.
+#     API expandida para obter anomalias com filtros e paginação - CORRIGIDA.
 #     """
 #     try:
+#         print("🔍 Buscando anomalias...")  # Debug
+        
 #         # Parâmetros de query
 #         page = int(request.args.get('page', 1))
 #         limit = int(request.args.get('limit', 50))
 #         risk_level = request.args.get('risk_level', '')
 #         camera_id = request.args.get('camera_id', '')
 #         anomaly_type = request.args.get('type', '')
-#         hours_back = int(request.args.get('hours_back', 24))
+#         hours_back = int(request.args.get('hours_back', 168))  # 7 dias por padrão
 #         include_false_positives = request.args.get('include_false_positives', 'true').lower() == 'true'
+        
+#         print(f"📊 Parâmetros: page={page}, limit={limit}, hours_back={hours_back}")
         
 #         # Calcular offset
 #         offset = (page - 1) * limit
@@ -265,7 +306,7 @@ def get_anomalies():
 #         where_conditions = []
 #         params = []
         
-#         # Filtro de tempo
+#         # Filtro de tempo (mais permissivo para debug)
 #         time_threshold = datetime.now() - timedelta(hours=hours_back)
 #         where_conditions.append("datetime(timestamp) >= ?")
 #         params.append(time_threshold.isoformat())
@@ -284,44 +325,100 @@ def get_anomalies():
 #             params.append(anomaly_type)
             
 #         if not include_false_positives:
-#             where_conditions.append("is_false_positive = 0")
+#             where_conditions.append("(is_false_positive = 0 OR is_false_positive IS NULL)")
         
 #         where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
         
+#         print(f"🔎 Query WHERE: {where_clause}")
+#         print(f"🔎 Parâmetros: {params}")
+        
 #         with sqlite3.connect(DB_NAME) as conn:
 #             cursor = conn.cursor()
+            
+#             # Primeiro, verificar se a tabela existe e tem dados
+#             cursor.execute("SELECT COUNT(*) FROM anomalies_enhanced")
+#             total_records = cursor.fetchone()[0]
+#             print(f"📈 Total de registos na BD: {total_records}")
+            
+#             if total_records == 0:
+#                 # Retornar resposta vazia mas válida
+#                 return jsonify({
+#                     'anomalies': [],
+#                     'pagination': {
+#                         'page': page,
+#                         'limit': limit,
+#                         'total': 0,
+#                         'pages': 0,
+#                         'has_next': False,
+#                         'has_prev': False
+#                     }
+#                 })
             
 #             # Query principal com paginação
 #             query = f"""
 #                 SELECT * FROM anomalies_enhanced 
 #                 {where_clause}
-#                 ORDER BY datetime(timestamp) DESC 
+#                 ORDER BY id DESC 
 #                 LIMIT ? OFFSET ?
 #             """
-#             params.extend([limit, offset])
-#             cursor.execute(query, params)
+#             params_with_pagination = params + [limit, offset]
+            
+#             print(f"🔎 Query completa: {query}")
+#             print(f"🔎 Parâmetros finais: {params_with_pagination}")
+            
+#             cursor.execute(query, params_with_pagination)
 #             anomalies = cursor.fetchall()
+            
+#             print(f"📋 Anomalias encontradas: {len(anomalies)}")
             
 #             # Query para contar total
 #             count_query = f"SELECT COUNT(*) FROM anomalies_enhanced {where_clause}"
-#             cursor.execute(count_query, params[:-2])  # Remover limit e offset
+#             cursor.execute(count_query, params)
 #             total_count = cursor.fetchone()[0]
+            
+#             print(f"📊 Total com filtros: {total_count}")
+            
+#             # Obter nomes das colunas
+#             cursor.execute("PRAGMA table_info(anomalies_enhanced)")
+#             columns_info = cursor.fetchall()
+#             columns = [col[1] for col in columns_info]  # col[1] é o nome da coluna
+            
+#             print(f"🏛️ Colunas da tabela: {columns}")
             
 #             # Formatar resultados
 #             result = []
-#             columns = [desc[0] for desc in cursor.description]
             
 #             for row in anomalies:
-#                 anomaly_dict = dict(zip(columns, row))
-                
-#                 # Parse additional_data se existir
-#                 if anomaly_dict['additional_data']:
-#                     try:
-#                         anomaly_dict['additional_data'] = json.loads(anomaly_dict['additional_data'])
-#                     except:
+#                 try:
+#                     anomaly_dict = dict(zip(columns, row))
+                    
+#                     # Garantir que campos críticos existem
+#                     anomaly_dict['id'] = anomaly_dict.get('id', 0)
+#                     anomaly_dict['type'] = anomaly_dict.get('type', 'UNKNOWN')
+#                     anomaly_dict['combined_score'] = anomaly_dict.get('combined_score', 0.0)
+#                     anomaly_dict['risk_level'] = anomaly_dict.get('risk_level', 'MEDIUM')
+#                     anomaly_dict['timestamp'] = anomaly_dict.get('timestamp', datetime.now().isoformat())
+#                     anomaly_dict['location'] = anomaly_dict.get('location', 'Unknown')
+#                     anomaly_dict['camera_id'] = anomaly_dict.get('camera_id', 'CAM01')
+#                     anomaly_dict['is_false_positive'] = bool(anomaly_dict.get('is_false_positive', False))
+                    
+#                     # Parse additional_data se existir
+#                     if anomaly_dict.get('additional_data'):
+#                         try:
+#                             anomaly_dict['additional_data'] = json.loads(anomaly_dict['additional_data'])
+#                         except:
+#                             anomaly_dict['additional_data'] = {}
+#                     else:
 #                         anomaly_dict['additional_data'] = {}
-                
-#                 result.append(anomaly_dict)
+                    
+#                     result.append(anomaly_dict)
+                    
+#                 except Exception as row_error:
+#                     print(f"❌ Erro ao processar linha: {row_error}")
+#                     continue
+            
+#             # Calcular paginação
+#             total_pages = (total_count + limit - 1) // limit if total_count > 0 else 0
             
 #             # Resposta com metadata de paginação
 #             response = {
@@ -330,17 +427,26 @@ def get_anomalies():
 #                     'page': page,
 #                     'limit': limit,
 #                     'total': total_count,
-#                     'pages': (total_count + limit - 1) // limit,
+#                     'pages': total_pages,
 #                     'has_next': offset + limit < total_count,
 #                     'has_prev': page > 1
 #                 }
 #             }
             
+#             print(f"✅ Resposta preparada: {len(result)} anomalias, {total_pages} páginas")
 #             return jsonify(response)
             
 #     except Exception as e:
-#         print(f"Erro na API get_anomalies: {e}")
-#         return jsonify({"error": "Erro interno do servidor"}), 500
+#         print(f"❌ Erro na API get_anomalies: {e}")
+#         import traceback
+#         traceback.print_exc()
+        
+#         # Retornar erro mais detalhado
+#         return jsonify({
+#             "error": f"Erro interno do servidor: {str(e)}",
+#             "details": "Verifique os logs do servidor para mais informações"
+#         }), 500
+
 
 @app.route('/api/log_anomaly', methods=['POST'])
 def log_anomaly():
