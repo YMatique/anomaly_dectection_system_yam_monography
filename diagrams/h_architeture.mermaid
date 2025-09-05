@@ -1,0 +1,51 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#ffffff',
+    'primaryTextColor': '#1f2937',
+    'primaryBorderColor': '#374151',
+    'lineColor': '#374151',
+    'background': '#ffffff',
+    'secondaryColor': '#f8fafc',
+    'tertiaryColor': '#e2e8f0'
+  }
+}}%%
+
+graph LR
+    A[📹 Fonte Vídeo] --> B[Frame Extraction<br/>64x64]
+    B --> C[ Optical Flow]
+    C --> D[Buffer 10 Frames]
+    
+    D --> E[ CAE<br/>Análise Espacial]
+    D --> F[ ConvLSTM<br/>Análise Temporal]
+    
+    E --> G[Fusão Scores]
+    F --> G
+    
+    G --> H{Score > Threshold?}
+    
+    H -->|Sim| I[ ANOMALIA]
+    H -->|Não| J[ NORMAL]
+    
+    I --> K[💾 Base Dados]
+    I --> L[📸 Screenshot]
+    K --> M[🌐 Dashboard]
+    L --> M
+    
+    J --> N[Continue Loop]
+    N --> B
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#1f2937
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#1f2937
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#1f2937
+    style D fill:#f1f8e9,stroke:#388e3c,stroke-width:2px,color:#1f2937
+    style E fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px,color:#1f2937
+    style F fill:#e1f5fe,stroke:#0288d1,stroke-width:3px,color:#1f2937
+    style G fill:#fff3e0,stroke:#ff9800,stroke-width:3px,color:#1f2937
+    style H fill:#f5f5f5,stroke:#616161,stroke-width:2px,color:#1f2937
+    style I fill:#ffebee,stroke:#d32f2f,stroke-width:3px,color:#1f2937
+    style J fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#1f2937
+    style K fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#1f2937
+    style L fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#1f2937
+    style M fill:#e8f5e8,stroke:#4caf50,stroke-width:3px,color:#1f2937
+    style N fill:#f5f5f5,stroke:#616161,stroke-width:2px,color:#1f2937
