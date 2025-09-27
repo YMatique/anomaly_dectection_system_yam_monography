@@ -1,0 +1,46 @@
+%%{init: {'theme':'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000'}}}%%
+
+flowchart TD
+    A[📹 Frame Input] --> B[Resize 64x64]
+    B --> C[Optical Flow vs Frame Anterior]
+    
+    C --> D[Frame Buffer - Mantém 10 flows]
+    
+    D --> E[Processamento Paralelo]
+    
+    subgraph E ["🔀 PROCESSAMENTO PARALELO"]
+        F[ CAE - Frame Individual]
+        G[ ConvLSTM - Sequência 9→1]
+    end
+    
+    F --> H[CAE Score - MSE Reconstruction]
+    G --> I[ConvLSTM Score - Prediction Error]
+    
+    H --> J[Fusão OR Logic - max score]
+    I --> J
+    
+    J --> K{Score > Threshold?}
+    
+    K -->|Sim| L[ ANOMALIA]
+    K -->|Não| M[ NORMAL]
+    
+    L --> N[📸 Screenshot + 💾 DB]
+    M --> O[Continue Loop]
+    N --> O
+    O --> A
+    
+    style A fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#000000
+    style B fill:#ffffff,stroke:#059669,stroke-width:2px,color:#000000
+    style C fill:#ffffff,stroke:#dc2626,stroke-width:2px,color:#000000
+    style D fill:#ffffff,stroke:#7c3aed,stroke-width:2px,color:#000000
+    style E fill:#f8fafc,stroke:#374151,stroke-width:2px,color:#000000
+    style F fill:#ffffff,stroke:#9333ea,stroke-width:3px,color:#000000
+    style G fill:#ffffff,stroke:#0ea5e9,stroke-width:3px,color:#000000
+    style H fill:#ffffff,stroke:#9333ea,stroke-width:2px,color:#000000
+    style I fill:#ffffff,stroke:#0ea5e9,stroke-width:2px,color:#000000
+    style J fill:#ffffff,stroke:#f59e0b,stroke-width:3px,color:#000000
+    style K fill:#ffffff,stroke:#374151,stroke-width:2px,color:#000000
+    style L fill:#ffffff,stroke:#dc2626,stroke-width:3px,color:#000000
+    style M fill:#ffffff,stroke:#16a34a,stroke-width:2px,color:#000000
+    style N fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#000000
+    style O fill:#ffffff,stroke:#6b7280,stroke-width:2px,color:#000000
