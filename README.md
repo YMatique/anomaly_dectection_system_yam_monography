@@ -301,3 +301,20 @@ Este projeto é desenvolvido como parte de trabalho acadêmico (Monografia) para
 ---
 
 **⚡ Sistema pronto para proteger sua residência com Inteligência Artificial!**
+
+
+---
+
+## ** Atualização **
+# Câmera padrão (webcam)
+python enhanced_detection.py
+
+# Ou explicitamente
+python enhanced_detection.py camera
+
+# Câmera específica por ID
+python enhanced_detection.py 0
+python enhanced_detection.py 1
+
+# Arquivo de vídeo (mantém compatibilidade)
+python enhanced_detection.py caminho/do/video.mp4
