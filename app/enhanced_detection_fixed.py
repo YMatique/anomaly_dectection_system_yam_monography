@@ -25,10 +25,10 @@ DB_NAME = 'anomalies_enhanced.db'
 # Dimensões dos frames de Fluxo Óptico
 IMG_HEIGHT, IMG_WIDTH = 64, 64
 IMG_CHANNELS = 2
-SEQUENCE_LENGTH = 20  # ✅ AUMENTADO de 10 para 20
+SEQUENCE_LENGTH = 10  # ✅ AUMENTADO de 10 para 20
 
 # ⚡ OTIMIZAÇÕES PARA HARDWARE LIMITADO (Core i5, 16GB RAM, sem GPU)
-SKIP_FRAMES = 2  # Processar 1 a cada 3 frames (aumenta FPS)
+SKIP_FRAMES = 0  # ✅ CORRIGIDO: Processar todos os frames (era 2)
 MAX_FRAME_WIDTH = 640  # Redimensionar vídeo grande para 640px
 USE_THREADING = True  # Processar predições em thread separada
 BATCH_PREDICTION = False  # Desabilitar batch para economizar RAM
@@ -350,7 +350,7 @@ class EnhancedAnomalyDetector:
         print(f"📸 Screenshot: {screenshot_path_relative}/{screenshot_filename}")
 
     def run_detection(self, video_path):
-        """✅ MELHORADO: Executa detecção com filtros anti-falso-positivo"""
+        """✅ MELHORADO: Executa detecção com filtros anti-falso-positivo e controle de FPS"""
         if not os.path.exists(video_path):
             print(f"❌ Vídeo não encontrado: {video_path}")
             return
@@ -364,6 +364,13 @@ class EnhancedAnomalyDetector:
         if not cap.isOpened():
             print(f"❌ Erro ao abrir vídeo: {video_path}")
             return
+
+        # ✅ CORRIGIDO: Obter FPS do vídeo original e calcular delay
+        original_fps = cap.get(cv2.CAP_PROP_FPS)
+        if original_fps == 0 or original_fps > 120:  # Fallback para valores inválidos
+            original_fps = 30
+        delay_ms = int(1000 / original_fps)  # Converter FPS para delay em milissegundos
+        print(f"📹 FPS do vídeo: {original_fps:.1f} | Delay entre frames: {delay_ms}ms")
 
         ret, prev_frame = cap.read()
         if not ret:
@@ -391,7 +398,7 @@ class EnhancedAnomalyDetector:
             frames_skipped += 1
             if frames_skipped % (SKIP_FRAMES + 1) != 0:
                 frame_count += 1
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if cv2.waitKey(delay_ms) & 0xFF == ord('q'):  # ✅ CORRIGIDO: usar delay_ms
                     break
                 continue
 
@@ -433,7 +440,7 @@ class EnhancedAnomalyDetector:
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
                 cv2.imshow('Detecção Melhorada', display_frame)
                 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if cv2.waitKey(delay_ms) & 0xFF == ord('q'):  # ✅ CORRIGIDO: usar delay_ms
                     break
                 continue
             
@@ -513,7 +520,7 @@ class EnhancedAnomalyDetector:
             prev_gray = next_gray
             frame_count += 1
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(delay_ms) & 0xFF == ord('q'):  # ✅ CORRIGIDO: usar delay_ms
                 break
 
         cap.release()
