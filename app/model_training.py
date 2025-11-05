@@ -157,7 +157,7 @@ def main():
     cae_input_shape = (IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
     cae_model = build_cae_model(cae_input_shape)
     cae_callbacks = [EarlyStopping(monitor='loss', patience=5),
-                     ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'cae_model_best_.keras'),
+                     ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'cae_model_best_uz.keras'),
                                      save_best_only=True)]
     
     cae_history = cae_model.fit(cae_train_data, cae_train_data,
@@ -168,7 +168,7 @@ def main():
     
     # Salvar o modelo final e o gráfico
     cae_model.save(os.path.join(MODELS_DIR, 'cae_final.keras'))
-    plot_training_history(cae_history, 'CAE', os.path.join(MODELS_DIR, 'cae_training_loss.png'))
+    plot_training_history(cae_history, 'CAE', os.path.join(MODELS_DIR, 'cae_training_loss_uz.png'))
     print(f"Modelo CAE salvo em {os.path.join(MODELS_DIR, 'cae_final.keras')}")
 
 
@@ -177,7 +177,7 @@ def main():
     convlstm_input_shape = (SEQUENCE_LENGTH - 1, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
     convlstm_model = build_convlstm_model(convlstm_input_shape)
     convlstm_callbacks = [EarlyStopping(monitor='loss', patience=5),
-                          ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'convlstm_model_best_.keras'),
+                          ModelCheckpoint(filepath=os.path.join(MODELS_DIR, 'convlstm_model_best_uz.keras'),
                                           save_best_only=True)]
     
     convlstm_history = convlstm_model.fit(convlstm_train_data, convlstm_target_data,
@@ -188,7 +188,7 @@ def main():
     
     # Salvar o modelo final e o gráfico
     convlstm_model.save(os.path.join(MODELS_DIR, 'convlstm_final.keras'))
-    plot_training_history(convlstm_history, 'ConvLSTM', os.path.join(MODELS_DIR, 'convlstm_training_loss.png'))
+    plot_training_history(convlstm_history, 'ConvLSTM', os.path.join(MODELS_DIR, 'convlstm_training_loss_uz.png'))
     print(f"Modelo ConvLSTM salvo em {os.path.join(MODELS_DIR, 'convlstm_final.keras')}")
 
 if __name__ == "__main__":

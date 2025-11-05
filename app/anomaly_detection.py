@@ -97,8 +97,8 @@ class EnhancedAnomalyDetector:
         """Carrega os modelos treinados"""
         print("📥 A carregar modelos treinados...")
         try:
-            self.cae_model = load_model(os.path.join(MODELS_DIR, 'cae_final.keras'))
-            self.convlstm_model = load_model(os.path.join(MODELS_DIR, 'convlstm_final.keras'))
+            self.cae_model = load_model(os.path.join(MODELS_DIR, 'cae_model_best_uz.keras'))
+            self.convlstm_model = load_model(os.path.join(MODELS_DIR, 'convlstm_model_best_uz.keras'))
             print("✅ Modelos carregados com sucesso.")
         except Exception as e:
             print(f"❌ Erro ao carregar modelos: {e}")
